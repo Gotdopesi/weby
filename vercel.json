@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm run install:all",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/$1" }],
+  "crons": [
+    {
+      "path": "/api/cron/send-sms",
+      "schedule": "0 8-20 * * *"
+    }
+  ]
+}

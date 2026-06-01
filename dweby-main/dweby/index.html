@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dominik Bašek | Webdesigner pro malé firmy</title>
+    <!-- Favicon - Tematická ikona (kód) -->
+    <link rel="icon" type="image/jpeg" href="logo/Logo_Střela.png">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    
+    <!-- Google Analytics (Conditional) -->
+    <script src="main.js" defer></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAVIGACE -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="logo/Logo_DB.png" alt="Dominik Bašek Logo">
+            </div>
+
+            
+            <button class="nav-toggle" id="navToggle" aria-label="Menu">
+                <div class="hamburger-icon"></div>
+            </button>
+
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Domů</a>
+                <a href="#projekty" class="nav-link">Projekty</a>
+                <a href="poptavka.html" class="nav-link">Formulář</a>
+                <a href="#kontakt" class="nav-link">Kontakt</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                Dostupný pro nové projekty
+            </div>
+            <h1>Jednoduché weby, <br> které <span>fungují.</span></h1>
+            <p>Pomáhám menším firmám a podnikatelům růst díky přehledným a rychlým webovým stránkám bez zbytečných komplikací.</p>
+            <div class="cta-group">
+                <a href="poptavka.html" class="btn-primary">Pojďme tvořit</a>
+                <a href="#projekty" class="btn-link">Projekty ↓</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- O MNĚ A NABÍDKA -->
+    <section id="o-mne" style="background: white; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6;">
+        <div class="container grid-split">
+            <div class="about-content">
+                <div class="section-tag">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    O mně
+                </div>
+                <div class="about-text">
+                    <p>Jsem začínající webdesigner, který se zaměřuje na tvorbu jednoduchých, složitějších a přehledných webových stránek pro menší firmy a podnikatele. Weby navrhuji tak, aby byly srozumitelné, rychlé a snadno použitelné – bez zbytečných komplikací.</p>
+                    <p>V oblasti webů a programování se pohybuji více než 6 let. Mám vystudovanou střední školu zaměřenou na programování a aktuálně studuji vysokou školu ve stejném oboru. Díky tomu dokážu propojit technické znalosti s praktickým přístupem.</p>
+                    <p>Web zvládnu navrhnout a spustit během několika dnů. Weby, které vytvořím, rovněž spravuji a upravuji podle potřeb klienta, aby zůstávaly aktuální a funkční i do budoucna.</p>
+                </div>
+            </div>
+            <div class="offer-card">
+                <div class="section-tag">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                    Co nabízím
+                </div>
+                <ul class="offer-list">
+                    <li><svg class="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Tvorbu jednoduchých webových stránek</li>
+                    <li><svg class="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Weby pro restaurace a apartmány</li>
+                    <li><svg class="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Úpravy a správu vytvořených webů</li>
+                    <li><svg class="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Rychlou komunikaci a rozumné ceny</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROJEKTY -->
+    <section id="projekty">
+        <div class="container">
+            <div class="projects-header">
+                <div>
+                    <div class="section-tag">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        Rozcestník
+                    </div>
+                    <h2 style="font-family: var(--font-serif); font-size: 2.5rem; font-style: italic;">Vybrané práce</h2>
+                </div>
+            </div>
+
+            <div class="projects-grid">
+                <!-- Projekt 1 -->
+                <a href="/apartman" class="card">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    </div>
+                    <h3>Apartmán Dita</h3>
+                    <p>Příjemná prezentace apartmánu v centru Karlových Varů.</p>
+                    <div class="card-footer">Zobrazit web <span>→</span></div>
+                </a>
+                <!-- Projekt 2 -->
+                
+                <a href= "https://www.zedreva.net" class="card">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-1a3 3 0 1 1 0-6h1z"></path><path d="M10 2v20"></path><path d="M7 2h3"></path><path d="M7 22h3"></path><path d="M2 12c0 1.1.9 2 2 2h6"></path><path d="M2 12c0-1.1.9-2 2-2h6"></path></svg>
+                    </div>
+                    <h3>Truhlářství zedreva</h3>
+                    <p>Moderní web pro firmu zedreva</p>
+                    <div class="card-footer">Zobrazit web <span>→</span></div>
+                </a>
+
+                <!--
+                 Projekt 3 
+                <a href="/test" class="card">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3h15"></path><path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"></path><path d="M6 14h12"></path></svg>
+                    </div>
+                    <h3>Testovací Projekt</h3>
+                    <p>Ukázka moderního rozhraní a technologií.</p>
+                    <div class="card-footer">Zobrazit web <span>→</span></div>
+                </a>
+                -->
+            </div>
+        </div>
+    </section>
+
+    <!-- KONTAKT -->
+    <section id="kontakt" class="contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <div>
+                    <h2>Máte projekt? <br> <span>Pojďme ho probrat.</span></h2>
+                    <p style="color: #6b7280; font-size: 1.1rem; max-width: 400px; margin-bottom: 2rem;">Nejlepší cestou je vyplnit krátký dotazník, abych se mohl na naši spolupráci připravit.</p>
+                    <a href="poptavka.html" class="btn-primary" style="display: inline-block; background: var(--white); color: var(--black);">Vyplnit poptávku</a>
+                    <p style="margin-top: 1.5rem; font-size: 0.9rem; color: #4b5563;">Pokud raději voláte, můžete se ozvat přímo:</p>
+                </div>
+                <div class="contact-box">
+                    <a href="tel:731664168" class="contact-link">
+                        <div class="icon-circle">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        </div>
+                        <div class="contact-info">
+                            <p>Telefon</p>
+                            <p>731 664 168</p>
+                        </div>
+                    </a>
+                    <a href="mailto:info@dweby.cz" class="contact-link">
+                        <div class="icon-circle">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </div>
+                        <div class="contact-info">
+                            <p>E-mail</p>
+                            <p>info@dweby.cz</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <footer>
+                © <span id="year"></span> &bull; Dominik Bašek &bull; Webdesigner
+            </footer>
+        </div>
+    </section>
+
+    <!-- COOKIE BANNER -->
+    <div id="cookieBanner" class="cookie-banner">
+        <div class="cookie-text">
+            Tento web používá soubory cookies k analýze návštěvnosti.
+        </div>
+        <div class="cookie-buttons">
+            <button onclick="setCookieConsent('declined')" class="btn-cookie btn-decline">Odmítnout</button>
+            <button onclick="setCookieConsent('accepted')" class="btn-cookie btn-accept">Přijmout</button>
+        </div>
+    </div>
+
+    <!-- No script here, it's in the head with defer -->
+</body>
+</html>
+
+

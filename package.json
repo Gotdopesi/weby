@@ -1,0 +1,23 @@
+{
+  "name": "weby",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "install:all": "node scripts/install-all.mjs",
+    "build": "node scripts/build-all.mjs",
+    "dev:dweby": "npm run dev --prefix dweby-main",
+    "dev:donzi": "npm run dev --prefix kadernictvi/donzi-reservations-main",
+    "dev:kadernictvi": "npm run dev --prefix kadernictvi/elegance-studio-showcase-main-tmp"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "date-fns": "^4.1.0",
+    "resend": "^4.8.0"
+  },
+  "devDependencies": {
+    "@vercel/functions": "^2.2.13",
+    "@vercel/node": "^5.8.3",
+    "typescript": "^5.9.3"
+  }
+}

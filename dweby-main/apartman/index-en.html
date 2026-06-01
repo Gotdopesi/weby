@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Dita | Accommodation Karlovy Vary</title>
+    <meta name="description" content="Modern and quiet accommodation in the center of Karlovy Vary. Apartment Dita offers comfort, privacy and a great location for your stay.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2c3e50',
+                        accent: '#d4af37',
+                        glass: 'rgba(255, 255, 255, 0.75)',
+                        'bg-soft': 'rgba(255, 255, 255, 0.4)',
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Helvetica Neue', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+    <!-- Fixed Header -->
+    <nav class="sticky-nav">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="font-serif text-xl font-bold tracking-tight">Apartment Dita</span>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <!-- Language switcher -->
+                <div class="hidden sm:flex items-center gap-3">
+                    <a href="index.html" class="lang-link">CZ</a>
+                    <a href="index-en.html" class="lang-link active">EN</a>
+                    <a href="index-de.html" class="lang-link">DE</a>
+                </div>
+                
+                <!-- Call button -->
+                <a href="tel:+420603863791" class="btn-primary">
+                    <img src="./icons/phone.svg" alt="Phone" width="20" height="20" class="brightness-0 invert">
+                    <span class="hidden md:inline">Call and Book</span>
+                    <span class="md:hidden">Book</span>
+                </a>
+            </div>
+        </div>
+        <!-- Mobile language switcher -->
+        <div class="sm:hidden border-t border-black/5 py-2 flex justify-center gap-6">
+            <a href="index.html" class="lang-link">CZ</a>
+            <a href="index-en.html" class="lang-link active">EN</a>
+            <a href="index-de.html" class="lang-link">DE</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative h-[80vh] flex items-center justify-center overflow-hidden">
+        <img src="./images/hlavni - karlovy vary.jpg" alt="Karlovy Vary" class="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer">
+        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="relative z-10 text-center px-4 max-w-4xl">
+            <h1 class="text-white text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">Apartment Dita</h1>
+            <h1 class="text-white text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">Karlovy Vary</h1>
+            <p class="text-white/90 text-xl md:text-2xl font-light tracking-wide mb-8">Modern and quiet accommodation in the center of Karlovy Vary</p>
+        </div>
+    </header>
+
+    <!-- Key Advantages -->
+    <section class="py-20 px-4 bg-bg-soft">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
+                        <img src="./icons/parking.svg" class="w-8 h-8 opacity-70" alt="Location">
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Excellent Location</h3>
+                    <p class="text-primary/70">Within walking distance of colonnades and major tourist attractions.</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
+                        <img src="./icons/bed.svg" class="w-8 h-8 opacity-70" alt="Apartment">
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">The Entire Apartment</h3>
+                    <p class="text-primary/70">Maximum privacy and comfort in your own fully equipped apartment.</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
+                        <img src="./icons/wifi.svg" class="w-8 h-8 opacity-70" alt="Wi-Fi">
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Modern Facilities</h3>
+                    <p class="text-primary/70">Free fast Wi‑Fi, modern kitchen, and a peaceful environment for relaxation.</p>
+                </div>
+            </div>
+            
+            <div class="mt-16 flex flex-wrap justify-center gap-8 text-sm font-medium opacity-60">
+                <div class="flex items-center gap-2">✓ 200 m from station</div>
+                <div class="flex items-center gap-2">✓ Parking available</div>
+                <div class="flex items-center gap-2">✓ Non-smoking space</div>
+                <div class="flex items-center gap-2">✓ Free Wi‑Fi</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Preview -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl text-center mb-16">See Our Apartment</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src="./images/foto_1.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src="./images/foto_2.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src="./images/foto_3.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 hidden md:block">
+                    <img src="./images/foto_4.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 hidden md:block">
+                    <img src="./images/foto_5.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 hidden md:block">
+                    <img src="./images/foto_6.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+            </div>
+            <div class="text-center">
+                <a href="galerie-en.html" class="inline-flex items-center gap-2 text-accent font-bold hover:underline">
+                    View full gallery
+                    <img src="./icons/gallery.svg" class="w-4 h-4 rotate-[-90deg] brightness-0 sepia saturate-[2000%] hue-rotate-[10deg]" alt="Arrow">
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stay Process -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl text-center mb-16">How does the stay work?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">01</span>
+                    <h3 class="text-xl font-bold mb-3">You Call</h3>
+                    <p class="text-primary/70 text-sm">We'll arrange the dates and all the details of your reservation by phone.</p>
+                </div>
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">02</span>
+                    <h3 class="text-xl font-bold mb-3">Arrival</h3>
+                    <p class="text-primary/70 text-sm">We'll personally welcome you and hand over the keys to your new home.</p>
+                </div>
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">03</span>
+                    <h3 class="text-xl font-bold mb-3">Stay</h3>
+                    <p class="text-primary/70 text-sm">Enjoy Karlovy Vary to the fullest with comfortable facilities in our apartment.</p>
+                </div>
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">04</span>
+                    <h3 class="text-xl font-bold mb-3">Departure</h3>
+                    <p class="text-primary/70 text-sm">Key hand-over happens as agreed, so you can depart peacefully.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Amenities -->
+    <section class="py-20 px-4">
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-4xl text-center mb-16">Apartment Amenities</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/bed.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Bedroom</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/tv.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Living space with TV</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/kitchen.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Fully equipped kitchen</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/bath.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Bathroom with shower</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/wifi.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Free Wi‑Fi</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/heating.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Heating</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/towels.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Towels and linen</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/non-smoking.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Non-smoking space</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/parking.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Parking nearby</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="text-5xl font-serif text-accent mb-2">⭐ 9.8 / 10</div>
+                <p class="text-primary/60 font-medium tracking-widest uppercase text-sm">Guest Ratings</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Very clean, modernly furnished and in a great location. The host was very kind and helpful."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Amazing location just a few minutes from the station and spa center. Kitchen equipment was above standard."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Quiet apartment even though it's in the center. Everything went perfectly well."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "The beds were incredibly comfortable, we slept like babies. Great value for money."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Guests rate the stay as exceptional due to privacy and perfect cleanliness of the entire space."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Modern bathroom and fast Wi-Fi. We felt at home from the first minute."
+                </blockquote>
+            </div>
+        </div>
+    </section>
+
+    <!-- Location -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl text-center mb-6">Location</h2>
+            <p class="text-center mb-12 text-primary/70 max-w-2xl mx-auto">
+                You can find us at <strong>Moskevská 1022/38, Karlovy Vary</strong>. 
+                Steps away from the train station and within walking distance of all colonnades.
+            </p>
+            <div class="h-[450px] rounded-3xl overflow-hidden shadow-xl">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2551.480036323631!2d12.868770376839387!3d50.23199997155057!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47a098bc7b316499%3A0xc067219fdf7d9c66!2zTW9za2V2c2vDoSAxMDIyLzM4LCAzNjAgMDEgS2FybG92eSBWYXJ5!5e0!3m2!1sen!2scz!4v1713330000000!5m2!1sen!2scz" 
+                    width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-24 px-4 bg-bg-soft text-center">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-4xl md:text-5xl mb-8">We look forward to your visit</h2>
+            <p class="text-xl text-primary/70 mb-12">Call us and book your stay in the heart of Karlovy Vary.</p>
+            <a href="tel:+420603863791" class="text-3xl md:text-5xl font-bold text-accent hover:underline inline-block mb-4">
+                603 863 791
+            </a>
+            <div class="mt-8">
+                <a href="tel:+420603863791" class="btn-primary inline-flex mx-auto">
+                    <img src="./icons/phone.svg" alt="Phone" width="24" height="24" class="brightness-0 invert">
+                    Call and book now
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-12 border-t border-black/5 text-center text-sm text-primary/40">
+        <p>© 2024 Apartment Dita, Karlovy Vary. Všechna práva vyhrazena.</p>
+        <p class="mt-2">Web made by: <a href="http://www.dweby.wz.cz" class="hover:text-primary transition-colors">www.dweby.wz.cz</a></p>
+    </footer>
+
+</body>
+</html>

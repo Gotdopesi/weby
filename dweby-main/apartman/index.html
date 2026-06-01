@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Dita | Ubytování Karlovy Vary</title>
+    <meta name="description" content="Moderní a klidné ubytování v centru Karlových Varů. Apartment Dita nabízí komfort, soukromí a skvělou polohu pro váš pobyt.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2c3e50',
+                        accent: '#d4af37',
+                        glass: 'rgba(255, 255, 255, 0.75)',
+                        'bg-soft': 'rgba(255, 255, 255, 0.4)',
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Helvetica Neue', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+
+    <!-- Pevná horní lišta -->
+    <nav class="sticky-nav">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="font-serif text-xl font-bold tracking-tight">Apartment Dita</span>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <!-- Jazykový přepínač -->
+                <div class="hidden sm:flex items-center gap-3">
+                    <a href="index.html" class="lang-link active">CZ</a>
+                    <a href="index-en.html" class="lang-link">EN</a>
+                    <a href="index-de.html" class="lang-link">DE</a>
+                </div>
+                
+                <!-- Tlačítko Volat -->
+                <a href="tel:+420603863791" class="btn-primary">
+                    <img src="./icons/phone.svg" alt="Phone" width="20" height="20" class="brightness-0 invert">
+                    <span class="hidden md:inline">Zavolat a rezervovat</span>
+                    <span class="md:hidden">Rezervovat</span>
+                </a>
+            </div>
+        </div>
+        <!-- Mobilní jazykový přepínač -->
+        <div class="sm:hidden border-t border-black/5 py-2 flex justify-center gap-6">
+            <a href="index.html" class="lang-link active">CZ</a>
+            <a href="index-en.html" class="lang-link">EN</a>
+            <a href="index-de.html" class="lang-link">DE</a>
+        </div>
+    </nav>
+
+    <!-- Hero Sekce -->
+    <header class="relative h-[80vh] flex items-center justify-center overflow-hidden">
+        <img src="./images/hlavni - karlovy vary.jpg" alt="Karlovy Vary" class="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer">
+        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="relative z-10 text-center px-4 max-w-4xl">
+            <h1 class="text-white text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">Apartment Dita</h1>
+            <h1 class="text-white text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">Karlovy Vary</h1>
+            <p class="text-white/90 text-xl md:text-2xl font-light tracking-wide mb-8">Moderní a klidné ubytování v centru Karlových Varů</p>
+        </div>
+    </header>
+
+    <!-- Hlavní výhody -->
+    <section class="py-20 px-4 bg-bg-soft">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
+                        <img src="./icons/parking.svg" class="w-8 h-8 opacity-70" alt="Lokalita">
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Vynikající lokalita</h3>
+                    <p class="text-primary/70">V docházkové vzdálenosti od kolonád a hlavních turistických cílů.</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
+                        <img src="./icons/bed.svg" class="w-8 h-8 opacity-70" alt="Apartmán">
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Celý apartmán pro vás</h3>
+                    <p class="text-primary/70">Maximální soukromí a komfort ve vlastním plně vybaveném bytě.</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
+                        <img src="./icons/wifi.svg" class="w-8 h-8 opacity-70" alt="Wi-Fi">
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Moderní vybavení</h3>
+                    <p class="text-primary/70">Rychlá Wi‑Fi zdarma, moderní kuchyň a klidné prostředí pro odpočinek.</p>
+                </div>
+            </div>
+            
+            <div class="mt-16 flex flex-wrap justify-center gap-8 text-sm font-medium opacity-60">
+                <div class="flex items-center gap-2">✓ 200 m od nádraží</div>
+                <div class="flex items-center gap-2">✓ Klidná lokalita v centru města</div>
+                <div class="flex items-center gap-2">✓ Soukromí – apartmán jen pro vás</div>
+                <div class="flex items-center gap-2">✓ Wi‑Fi zdarma</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Galerie náhled -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl text-center mb-16">Nahlédněte do apartmánu</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src="./images/foto_1.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src="./images/foto_2.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src="./images/foto_3.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 hidden md:block">
+                    <img src="./images/foto_4.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 hidden md:block">
+                    <img src="./images/foto_5.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+                <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 hidden md:block">
+                    <img src="./images/foto_6.jpg" class="w-full h-full object-cover" alt="Apartment Dita" referrerPolicy="no-referrer">
+                </div>
+            </div>
+            <div class="text-center">
+                <a href="galerie.html" class="inline-flex items-center gap-2 text-accent font-bold hover:underline">
+                    Zobrazit celou galerii
+                    <img src="./icons/gallery.svg" class="w-4 h-4 rotate-[] brightness-0 sepia saturate-[2000%] hue-rotate-[10deg]" alt="Arrow">
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Jak probíhá pobyt -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl text-center mb-16">Jak u nás probíhá pobyt?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">01</span>
+                    <h3 class="text-xl font-bold mb-3">Zavoláte</h3>
+                    <p class="text-primary/70 text-sm">Domluvíme termín a veškeré detaily vaší rezervace po telefonu.</p>
+                </div>
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">02</span>
+                    <h3 class="text-xl font-bold mb-3">Příjezd</h3>
+                    <p class="text-primary/70 text-sm">Osobně vás přivítáme a předáme vám klíče od vašeho nového domova.</p>
+                </div>
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">03</span>
+                    <h3 class="text-xl font-bold mb-3">Pobyt</h3>
+                    <p class="text-primary/70 text-sm">Užijte si Karlovy Vary naplno s komfortním zázemím v našem apartmánu.</p>
+                </div>
+                <div class="relative p-8 glass-card rounded-2xl">
+                    <span class="absolute top-4 right-6 text-6xl font-serif opacity-10">04</span>
+                    <h3 class="text-xl font-bold mb-3">Odjezd</h3>
+                    <p class="text-primary/70 text-sm">Předání klíčů probíhá dle domluvy, abyste mohli v klidu odcestovat.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vybavení -->
+    <section class="py-20 px-4">
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-4xl text-center mb-16">Vybavení Apartmánu</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/bed.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Ložnice</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/tv.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Obývací prostor s TV</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/kitchen.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Plně vybavená kuchyň</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/bath.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Koupelna se sprchou</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/wifi.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Wi‑Fi zdarma</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/heating.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Topení</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/towels.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Ručníky a prádlo</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/non-smoking.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Nekuřácký prostor</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-bg-soft rounded-lg text-accent">
+                        <img src="./icons/parking.svg" alt="Icon">
+                    </div>
+                    <span class="font-medium">Parkování v okolí</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recenze -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="text-5xl font-serif text-accent mb-2">⭐ 9,8 / 10</div>
+                <p class="text-primary/60 font-medium tracking-widest uppercase text-sm">Hodnocení našich hostů</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Velmi čisté, moderně zařízené a na skvělém místě. Majitelka byla velmi milá a ochotná."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Úžasná lokalita jen pár minut od nádraží i lázeňského centra. Vybavení kuchyně bylo nadstandardní."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Klidný a tichý apartmán, přestože je v centru. Vše proběhlo naprosto v pořádku."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Postele byly neuvěřitelně pohodlné, spali jsme jako v bavlnce. Skvělý poměr ceny a kvality."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Hosté hodnotí pobyt jako výjimečný díky soukromí a perfektní čistotě celého prostoru."
+                </blockquote>
+                <blockquote class="glass-card p-8 rounded-2xl italic text-primary/80">
+                    "Moderní koupelna a rychlá Wi-Fi. Cítili jsme se zde jako doma od první minuty."
+                </blockquote>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lokalita -->
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-4xl text-center mb-6">Poloha</h2>
+            <p class="text-center mb-12 text-primary/70 max-w-2xl mx-auto">
+                Najdete nás na adrese <strong>Moskevská 1022/38, Karlovy Vary</strong>. 
+                Pár kroků od vlakového nádraží a v pěší dostupnosti od všech kolonád.
+            </p>
+            <div class="h-[450px] rounded-3xl overflow-hidden shadow-xl">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2551.480036323631!2d12.868770376839387!3d50.23199997155057!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47a098bc7b316499%3A0xc067219fdf7d9c66!2zTW9za2V2c2vDoSAxMDIyLzM4LCAzNjAgMDEgS2FybG92eSBWYXJ5!5e0!3m2!1scs!2scz!4v1713330000000!5m2!1scs!2scz" 
+                    width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- Závěrečná výzva -->
+    <section class="py-24 px-4 bg-bg-soft text-center">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-4xl md:text-5xl mb-8">Těšíme se na vaši návštěvu</h2>
+            <p class="text-xl text-primary/70 mb-12">Zavolejte nám a rezervujte si svůj termín v srdci Karlových Varů.</p>
+            <a href="tel:+420603863791" class="text-3xl md:text-5xl font-bold text-accent hover:underline inline-block mb-4">
+                603 863 791
+            </a>
+            <div class="mt-8">
+                <a href="tel:+420603863791" class="btn-primary inline-flex mx-auto">
+                    <img src="./icons/phone.svg" alt="Phone" width="24" height="24" class="brightness-0 invert">
+                    Zavolat a rezervovat ihned
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    
+<footer class="py-12 border-t border-black/5 text-center text-sm text-primary/40">
+        <p>© 2024 Apartment Dita, Karlovy Vary. Všechna práva vyhrazena.</p>
+        <p class="mt-2">Web made by: <a href="http://www.dweby.wz.cz" class="hover:text-primary transition-colors">www.dweby.wz.cz</a></p>
+</footer>
+
+
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poptávka projektu | Dominik Bašek</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="logo/Logo_Střela.png">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <!-- Google Analytics (Conditional) -->
+    <script src="main.js" defer></script>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAVIGACE -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="logo/Logo_DB.png" alt="Dominik Bašek Logo">
+            </div>
+            
+            <button class="nav-toggle" id="navToggle" aria-label="Menu">
+                <div class="hamburger-icon"></div>
+            </button>
+
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Domů</a>
+                <a href="index.html#projekty" class="nav-link">Projekty</a>
+                <a href="poptavka.html" class="nav-link">Formulář</a>
+                <a href="index.html#kontakt" class="nav-link">Kontakt</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero" style="padding-bottom: 2rem;">
+        <div class="container">
+            <a href="index.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Zpět na hlavní stránku
+            </a>
+            <h1>Máte v hlavě <span>projekt?</span></h1>
+            <p>Vyplňte prosím tento krátký formulář. Celá poptávka je zcela <strong>nezávazná</strong>. Na základě vašich odpovědí vám připravím a zašlu ukázku, jak by mohl vypadat právě váš web, abyste si mohli udělat jasnou představu o výsledku.</p>
+        </div>
+    </section>
+
+    <section style="padding-top: 0;">
+        <div class="container">
+            <div class="form-container">
+                <form id="poptavkaForm">
+                    <div class="form-row">
+                        <div style="display: none !important;">
+                            <input type="text" name="nickname" id="nickname" tabindex="-1" autocomplete="off">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="company">Název firmy / Jméno</label>
+                            <input type="text" id="company" name="company" class="form-control" placeholder="Vaše firma s.r.o." required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="email">Váš E-mail</label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="jmeno@firma.cz" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="field">Obor podnikání</label>
+                        <input type="text" id="field" name="field" class="form-control" placeholder="např. Truhlářství, Restaurace" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="purpose">Hlavní účel webu</label>
+                        <select id="purpose" name="purpose" class="form-control" required onchange="toggleOtherPurpose(this.value)">
+                            <option value="" disabled selected>Vyberte účel...</option>
+                            <option value="zakaznici">Přilákání nových zákazníků</option>
+                            <option value="vizitka">Online vizitka / Prezentace služeb</option>
+                            <option value="menu">Online menu pro restauraci</option>
+                            <option value="info">Informativní web</option>
+                            <option value="jine">Jiný účel (vyplnit vlastní...)</option>
+                        </select>
+                    </div>
+
+                    <div id="otherPurposeWrapper" class="form-group" style="display: none; margin-top: -1.5rem; margin-bottom: 2.5rem;">
+                        <label for="otherPurpose">Specifikujte prosím váš účel</label>
+                        <input type="text" id="otherPurpose" name="otherPurpose" class="form-control" placeholder="O jaký typ webu se jedná?">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="style">Preferovaný styl webu</label>
+                        <select id="style" name="style" class="form-control" onchange="toggleOtherStyle(this.value)">
+                            <option value="minimal" selected>Moderní a čistý (Minimální)</option>
+                            <option value="traditional">Tradiční a seriózní</option>
+                            <option value="playful">Hravý a barevný</option>
+                            <option value="technical">Technický a industriální</option>
+                            <option value="vlastni">Nechám na vás</option>
+                            <option value="jiny_styl">Jiný styl (vyplnit vlastní...)</option>
+                        </select>
+                    </div>
+
+                    <div id="otherStyleWrapper" class="form-group" style="display: none; margin-top: -1.5rem; margin-bottom: 2.5rem;">
+                        <label for="otherStyle">Specifikujte prosím váš styl</label>
+                        <input type="text" id="otherStyle" name="otherStyle" class="form-control" placeholder="Jaký styl se vám líbí?">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Váš vlastní popis požadavků </label>
+                        <textarea id="description" name="description" class="form-control" placeholder="Popište vaši představu, co by měl web obsahovat, jaké funkce potřebujete a co se vám líbí. Čím podrobnější popis, tím blíže budeme vaší ideální představě..."></textarea>
+                    </div>
+
+                    <div class="form-submit-row">
+                        <button type="submit" id="submitBtn" class="btn-primary" style="width: 100%; border-radius: 20px;">
+                            Odeslat nezávaznou poptávku
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- SUCCESS MODAL -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Děkujeme!</h3>
+            <p>Vaše poptávka byla úspěšně odeslána. Do 7-14 dnů vám pošleme mail s odkazem na ukázku vaší webové stránky.</p>
+            <button onclick="closeModal()" class="btn-primary" style="width: 100%; border-radius: 16px;">V pořádku</button>
+        </div>
+    </div>
+
+    <!-- COOKIE BANNER -->
+    <div id="cookieBanner" class="cookie-banner">
+        <div class="cookie-text">
+            Tento web používá soubory cookies k analýze návštěvnosti.
+        </div>
+        <div class="cookie-buttons">
+            <button onclick="setCookieConsent('declined')" class="btn-cookie btn-decline">Odmítnout</button>
+            <button onclick="setCookieConsent('accepted')" class="btn-cookie btn-accept">Přijmout</button>
+        </div>
+    </div>
+
+    <!-- KONTAKT -->
+    <section id="kontakt" class="contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <div>
+                    <h2>Máte projekt? <br> <span>Pojďme ho probrat.</span></h2>
+                    <p style="color: #6b7280; font-size: 1.1rem; max-width: 400px; margin-bottom: 2rem;">Nejlepší cestou je vyplnit formulář výše, abych se mohl na naši spolupráci připravit.</p>
+                </div>
+                <div class="contact-box">
+                    <a href="tel:731664168" class="contact-link">
+                        <div class="icon-circle">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        </div>
+                        <div class="contact-info">
+                            <p>Telefon</p>
+                            <p>731 664 168</p>
+                        </div>
+                    </a>
+                    <a href="mailto:info@dweby.cz" class="contact-link">
+                        <div class="icon-circle">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </div>
+                        <div class="contact-info">
+                            <p>E-mail</p>
+                            <p>info@dweby.cz</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <footer style="margin-top: 5rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #4b5563;">
+                © <span id="year"></span> &bull; Dominik Bašek &bull; Webdesigner
+            </footer>
+        </div>
+    </section>
+
+    <script src="poptavka.js" defer></script>
+</body>
+</html>

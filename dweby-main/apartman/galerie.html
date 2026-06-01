@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fotogalerie | Apartment Dita</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2c3e50',
+                        accent: '#d4af37',
+                        glass: 'rgba(255, 255, 255, 0.75)',
+                        'bg-soft': 'rgba(255, 255, 255, 0.4)',
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Helvetica Neue', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body class="bg-transparent">
+
+    <nav class="sticky-nav">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <a href="index.html" class="flex items-center gap-2 group">
+                    <div class="w-8 h-8 rounded-full border border-primary/20 flex items-center justify-center glass-card group-hover:bg-primary group-hover:border-primary transition-all">
+                        <img src="./icons/arrow-right.svg" class="w-4 h-4 rotate-[-90deg] brightness-0 group-hover:invert" alt="Zpět">
+                    </div>
+                    <span class="font-serif text-xl font-bold">Apartment Dita</span>
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <!-- Jazykový přepínač -->
+                <div class="hidden sm:flex items-center gap-3">
+                    <a href="galerie.html" class="lang-link active">CZ</a>
+                    <a href="galerie-en.html" class="lang-link">EN</a>
+                    <a href="galerie-de.html" class="lang-link">DE</a>
+                </div>
+                <!-- Tlačítko Volat -->
+                <a href="tel:+420603863791" class="btn-primary">
+                    <img src="./icons/phone.svg" alt="Phone" width="20" height="20" class="brightness-0 invert">
+                    <span class="hidden md:inline">Zavolat a rezervovat</span>
+                    <span class="md:hidden">Rezervovat</span>
+                </a>
+            </div>
+        </div>
+        <!-- Mobilní jazykový přepínač -->
+        <div class="sm:hidden border-t border-black/5 py-2 flex justify-center gap-6">
+            <a href="galerie.html" class="lang-link active">CZ</a>
+            <a href="galerie-en.html" class="lang-link">EN</a>
+            <a href="galerie-de.html" class="lang-link">DE</a>
+        </div>
+    </nav>
+
+    <main class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h1 class="text-5xl mb-4">Fotogalerie</h1>
+                <p class="text-primary/60">Prohlédněte si prostory našeho apartmánu v Karlových Varech.</p>
+            </div>
+
+            <!-- Mřížka fotek -->
+            <div class="gallery-grid" id="gallery">
+                <div class="gallery-item" data-src="./images/foto_1.jpg">
+                    <img src="./images/foto_1.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_2.jpg">
+                    <img src="./images/foto_2.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_3.jpg">
+                    <img src="./images/foto_3.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_4.jpg">
+                    <img src="./images/foto_4.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_5.jpg">
+                    <img src="./images/foto_5.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_6.jpg">
+                    <img src="./images/foto_6.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_7.jpg">
+                    <img src="./images/foto_7.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_8.jpg">
+                    <img src="./images/foto_8.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_9.jpg">
+                    <img src="./images/foto_9.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_10.jpg">
+                    <img src="./images/foto_10.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_11.jpg">
+                    <img src="./images/foto_11.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_12.jpg">
+                    <img src="./images/foto_12.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_13.jpg">
+                    <img src="./images/foto_13.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_14.jpg">
+                    <img src="./images/foto_14.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_15.jpg">
+                    <img src="./images/foto_15.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_16.jpg">
+                    <img src="./images/foto_16.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_17.jpg">
+                    <img src="./images/foto_17.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_18.jpg">
+                    <img src="./images/foto_18.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_19.jpg">
+                    <img src="./images/foto_19.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_20.jpg">
+                    <img src="./images/foto_20.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_21.jpg">
+                    <img src="./images/foto_21.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_22.jpg">
+                    <img src="./images/foto_22.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_23.jpg">
+                    <img src="./images/foto_23.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_24.jpg">
+                    <img src="./images/foto_24.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_25.jpg">
+                    <img src="./images/foto_25.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+                <div class="gallery-item" data-src="./images/foto_26.jpg">
+                    <img src="./images/foto_26.jpg" alt="Apartment Dita" loading="lazy" referrerPolicy="no-referrer">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Lightbox -->
+    <div id="lightbox">
+        <button class="lightbox-close" id="lightbox-close">&times;</button>
+        <button class="lightbox-nav lightbox-prev" id="lightbox-prev">&#10094;</button>
+        <img id="lightbox-img" src="" alt="Zvětšený náhled">
+        <button class="lightbox-nav lightbox-next" id="lightbox-next">&#10095;</button>
+    </div>
+
+    <script src="./js/script.js"></script>
+
+    <footer class="py-12 border-t border-black/5 text-center text-sm text-primary/40">
+        <p>© 2024 Apartment Dita, Karlovy Vary. Všechna práva vyhrazena.</p>
+        <p class="mt-2">Web made by: <a href="http://www.dweby.wz.cz" class="hover:text-primary transition-colors">www.dweby.wz.cz</a></p>
+</footer>
+</body>
+</html>
