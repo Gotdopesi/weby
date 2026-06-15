@@ -1,19 +1,27 @@
 import { AppLink, useRouter } from "@/lib/router";
+import { AdminStaffNav } from "@/components/admin/AdminStaffNav";
+import { useAdminBarbershop } from "@/lib/use-admin-barbershop";
 import { cn } from "@/lib/utils";
-import { BarChart3, CalendarDays, Users } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 
-const LINKS = [
-  { to: "/admin", label: "Kalendář", icon: CalendarDays, exact: true },
-  { to: "/admin/zakaznici", label: "Zákazníci", icon: Users, exact: false },
-  { to: "/admin/statistiky", label: "Statistiky", icon: BarChart3, exact: false },
+const OWNER_LINKS = [
+  { to: "/admin/statistiky", label: "Přehled salónu", icon: BarChart3, exact: false },
 ] as const;
 
 export function AdminNav() {
   const { pathname } = useRouter();
+  const { isOwner, isStaff } = useAdminBarbershop();
+
+  if (isStaff) return <AdminStaffNav />;
 
   return (
-    <nav className="flex flex-wrap gap-2 mb-8 border-b border-border/60 pb-4">
-      {LINKS.map(({ to, label, icon: Icon, exact }) => {
+    <nav className="flex flex-wrap items-center gap-2 mb-8 border-b border-border/60 pb-4">
+      {isOwner && (
+        <span className="w-full sm:w-auto text-xs text-muted-foreground mb-1 sm:mb-0 sm:mr-2">
+          Přihlášen jako <span className="text-foreground font-medium">majitel</span>
+        </span>
+      )}
+      {OWNER_LINKS.map(({ to, label, icon: Icon, exact }) => {
         const active = exact ? pathname === to : pathname.startsWith(to);
         return (
           <AppLink
@@ -34,3 +42,4 @@ export function AdminNav() {
     </nav>
   );
 }
+

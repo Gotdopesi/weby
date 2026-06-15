@@ -1,14 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  addWeeks,
-  eachDayOfInterval,
-  endOfWeek,
-  format,
-  isSameDay,
-  parse,
-  startOfWeek,
-  subWeeks,
-} from "date-fns";
+import { addDays, format, isSameDay, parse, startOfDay, subDays } from "date-fns";
 import { cs } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AdminReservationDetailList } from "@/components/admin/AdminReservationDetailList";
@@ -26,7 +17,7 @@ import { getTimeSlotsForWeek, timeToMinutes } from "@/lib/booking-slots";
 import { getOpeningHoursForDay } from "@/lib/opening-hours";
 import { buildWeekColumnStates } from "@/lib/week-calendar-grid";
 
-const WEEKDAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+const VISIBLE_DAYS = 7;
 const ROW_HEIGHT_PX = 40;
 
 type Props = {
@@ -42,16 +33,17 @@ function activeReservations(rows: Reservation[]) {
 }
 
 export function AdminWeekCalendar({ rows, barbershopId, loading, readOnly, onDelete }: Props) {
-  const [weekStart, setWeekStart] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 1 }),
-  );
+  const [windowStart, setWindowStart] = useState(() => startOfDay(new Date()));
   const [picked, setPicked] = useState<Reservation | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const weekDays = useMemo(() => {
-    const end = endOfWeek(weekStart, { weekStartsOn: 1 });
-    return eachDayOfInterval({ start: weekStart, end });
-  }, [weekStart]);
+  const weekDays = useMemo(
+    () => Array.from({ length: VISIBLE_DAYS }, (_, i) => addDays(windowStart, i)),
+    [windowStart],
+  );
+
+  const todayStart = startOfDay(new Date());
+  const isCurrentWindow = isSameDay(windowStart, todayStart);
 
   const timeSlots = useMemo(() => getTimeSlotsForWeek(weekDays), [weekDays]);
 
@@ -90,11 +82,34 @@ export function AdminWeekCalendar({ rows, barbershopId, loading, readOnly, onDel
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Button type="button" variant="outline" size="icon" onClick={() => setWeekStart((w) => subWeeks(w, 1))}>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={() => setWindowStart((w) => subDays(w, VISIBLE_DAYS))}
+        >
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <span className="font-display text-xl capitalize">{weekLabel}</span>
-        <Button type="button" variant="outline" size="icon" onClick={() => setWeekStart((w) => addWeeks(w, 1))}>
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-display text-xl capitalize">{weekLabel}</span>
+          {!isCurrentWindow && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="h-auto py-0 text-xs"
+              onClick={() => setWindowStart(todayStart)}
+            >
+              Skočit na dnešek
+            </Button>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={() => setWindowStart((w) => addDays(w, VISIBLE_DAYS))}
+        >
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
@@ -120,7 +135,9 @@ export function AdminWeekCalendar({ rows, barbershopId, loading, readOnly, onDel
                         !hours && "opacity-40",
                       )}
                     >
-                      <div className="font-medium">{WEEKDAYS[i]}</div>
+                      <div className="font-medium capitalize">
+                        {format(d, "EEE", { locale: cs })}
+                      </div>
                       <div className="text-muted-foreground">{format(d, "d. M.", { locale: cs })}</div>
                     </th>
                   );

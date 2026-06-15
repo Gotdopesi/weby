@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminBarbershop } from "@/lib/use-admin-barbershop";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { fetchServicesForBooking, fetchServicesForStaff } from "@/lib/staff-services";
 import {
   type BookedInterval,
   fetchBookedIntervalsForDate,
@@ -46,7 +46,7 @@ function splitFullName(full: string): { first_name: string; last_name: string } 
 }
 
 export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Props) {
-  const { barbershopId } = useAdminBarbershop();
+  const { barbershopId, isStaff, staffId } = useAdminBarbershop();
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [serviceId, setServiceId] = useState("");
   const [bookingDate, setBookingDate] = useState("");
@@ -67,33 +67,35 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
 
   useEffect(() => {
     if (!open) return;
-    void supabase
-      .from(SHOWCASE_TABLES.services)
-      .select("id, name, price, duration_minutes")
-      .eq("barbershop_id", barbershopId)
-      .eq("is_active", true)
-      .order("name")
-      .then(({ data }) => {
-        setServices(
-          (data ?? []).map((s) => ({
-            id: s.id,
-            name: s.name,
-            price: Number(s.price),
-            duration_minutes: Number(s.duration_minutes),
-          })),
-        );
-      });
-  }, [open, barbershopId]);
+    void (async () => {
+      const list =
+        isStaff && staffId
+          ? await fetchServicesForStaff(staffId, barbershopId, true)
+          : await fetchServicesForBooking(barbershopId, null);
+      setServices(
+        list.map((s) => ({
+          id: s.id,
+          name: s.name,
+          price: s.price,
+          duration_minutes: s.duration_minutes,
+        })),
+      );
+    })();
+  }, [open, barbershopId, isStaff, staffId]);
 
   useEffect(() => {
     if (!open || !bookingDate) {
       setBookedIntervals([]);
       return;
     }
-    void fetchBookedIntervalsForDate(bookingDate, barbershopId)
+    void fetchBookedIntervalsForDate(
+      bookingDate,
+      barbershopId,
+      isStaff && staffId ? staffId : null,
+    )
       .then(setBookedIntervals)
       .catch(() => setBookedIntervals([]));
-  }, [open, bookingDate, barbershopId]);
+  }, [open, bookingDate, barbershopId, isStaff, staffId]);
 
   const reset = () => {
     setServiceId("");
@@ -106,8 +108,8 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
 
   const submit = async () => {
     const svc = services.find((s) => String(s.id) === serviceId);
-    if (!svc || !bookingDate || !bookingTime || !name.trim() || !email.trim() || !phone.trim()) {
-      toast.error("Vyplňte všechna pole.");
+    if (!svc || !bookingDate || !bookingTime || !name.trim()) {
+      toast.error("Vyplňte službu, datum, čas a jméno klienta.");
       return;
     }
     const { first_name, last_name } = splitFullName(name);
@@ -120,12 +122,13 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
       duration_minutes: svc.duration_minutes,
       first_name,
       last_name,
-      email: email.trim(),
-      phone: phone.trim(),
+      email: email.trim() || null,
+      phone: phone.trim() || null,
       booking_date: bookingDate,
       booking_time: bookingTime,
       status: "confirmed",
       sms_sent: false,
+      staff_id: isStaff && staffId ? staffId : null,
     });
     setSaving(false);
     if (error) {
@@ -205,12 +208,21 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jana Nováková" />
           </div>
           <div className="space-y-2">
-            <Label>E-mail</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Label>E-mail (volitelné)</Label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="pro potvrzení e-mailem"
+            />
           </div>
           <div className="space-y-2">
-            <Label>Telefon</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Label>Telefon (volitelné)</Label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="pro SMS připomínku"
+            />
           </div>
           {bookingDate && (
             <p className="text-xs text-muted-foreground capitalize">

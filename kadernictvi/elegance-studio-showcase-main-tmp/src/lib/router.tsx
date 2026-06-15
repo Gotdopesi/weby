@@ -17,10 +17,14 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
       window.history.pushState({}, "", to);
     }
     setPathname(window.location.pathname);
+    window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
-    const onPop = () => setPathname(window.location.pathname);
+    const onPop = () => {
+      setPathname(window.location.pathname);
+      window.scrollTo(0, 0);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { withTimeout } from "@/lib/promise-timeout";
+import { AdminDevQuickLogin } from "@/components/admin/AdminDevQuickLogin";
 
 const AUTH_BOOT_MS = 18_000;
 
@@ -120,6 +121,7 @@ export default function AdminLoginPage() {
             Přihlásit se
           </Button>
         </form>
+        <AdminDevQuickLogin />
       </div>
     </div>
   );

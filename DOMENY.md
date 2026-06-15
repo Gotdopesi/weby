@@ -24,6 +24,30 @@
 2. Ve **Vercel** → Project `weby` → **Settings → Domains** přidej novou doménu a DNS (CNAME/A dle Vercelu).
 3. **Redeploy** (push na `main` nebo ruční deploy).
 
+### Příklad: vlastní doména pro Studio Elegance
+
+Chceš místo `kadernictvi.dweby.cz` třeba `studio-elegance.cz`? Stačí přidat host do stejného site bloku (více domén = stejný web):
+
+```json
+"hosts": [
+  "kadernictvi.dweby.cz",
+  "studio-elegance.cz",
+  "www.studio-elegance.cz"
+],
+"siteUrl": "https://studio-elegance.cz"
+```
+
+**DNS u registrátora** (pro každou doménu):
+
+| Typ | Název | Hodnota |
+|-----|-------|---------|
+| A | `@` | `76.76.21.21` (Vercel) |
+| CNAME | `www` | `cname.vercel-dns.com` |
+
+Ve Vercelu přidej obě domény (`studio-elegance.cz` + `www`). Po deployi middleware podle `Host` servíruje stejný build `sites/kadernictvi`.
+
+**E-maily:** pokud chceš jiného odesílatele na vlastní doméně, nastav `resendFrom` a ověř doménu v Resend. Volitelně env `SITE_URL_KADERNICTVI=https://studio-elegance.cz` na Vercelu.
+
 ## Nový web / salón v monorepu
 
 1. Přidej složku projektu pod `Weby/`.

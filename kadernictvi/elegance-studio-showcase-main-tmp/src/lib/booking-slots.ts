@@ -2,6 +2,8 @@ import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
 import { BOOKING_SLOT_STEP_MINUTES, getOpeningHoursForDay } from "@/lib/opening-hours";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
+import { blockToBookedInterval, fetchStaffBlocksForDate } from "@/lib/staff-blocks";
+import { hoursForStaffOnDay, type StaffWeeklySchedule } from "@/lib/staff-schedule";
 
 /** Po–Pá 9:00–19:00, So 9:00–14:00 — sloty po 30 min, pauza 12:00–13:30. */
 const WEEKDAY_OPEN = 9 * 60;
@@ -34,19 +36,27 @@ export function minutesToTime(minutes: number): string {
 }
 
 /** Všechny startovní časy pro daný den (Date.getDay(): 0=neděle, 6=sobota). */
-export function getBookingTimesForDay(day: Date): string[] {
-  const dow = day.getDay();
-  if (dow === 0) return [];
+export function getBookingTimesForDay(day: Date, staffSchedule?: StaffWeeklySchedule | null): string[] {
+  const hours = staffSchedule
+    ? hoursForStaffOnDay(day, staffSchedule)
+    : getOpeningHoursForDay(day);
+  if (!hours) return [];
 
-  const close = dow === 6 ? SATURDAY_CLOSE : WEEKDAY_CLOSE;
   const times: string[] = [];
-
-  for (let m = WEEKDAY_OPEN; m < close; m += SLOT_STEP) {
+  for (let m = hours.open; m < hours.close; m += SLOT_STEP) {
     if (m >= LUNCH_START && m < LUNCH_END) continue;
     times.push(minutesToTime(m));
   }
 
   return times;
+}
+
+function closeMinutesForDay(day: Date, staffSchedule?: StaffWeeklySchedule | null): number {
+  const hours = staffSchedule
+    ? hoursForStaffOnDay(day, staffSchedule)
+    : getOpeningHoursForDay(day);
+  if (!hours) return 0;
+  return hours.close;
 }
 
 /** @deprecated použij getBookingTimesForDay */
@@ -83,9 +93,11 @@ export function filterAvailableStartTimes(
   durationMinutes: number,
   booked: BookedInterval[],
   now = new Date(),
+  staffSchedule?: StaffWeeklySchedule | null,
 ): string[] {
-  const close = day.getDay() === 6 ? SATURDAY_CLOSE : WEEKDAY_CLOSE;
-  const candidates = getBookingTimesForDay(day);
+  const close = closeMinutesForDay(day, staffSchedule);
+  if (close <= 0) return [];
+  const candidates = getBookingTimesForDay(day, staffSchedule);
 
   return candidates.filter((slot) => {
     const start = timeToMinutes(slot);
@@ -118,28 +130,44 @@ function isSameDayPastSlot(day: Date, slot: string, now: Date): boolean {
 export async function fetchBookedIntervalsForDate(
   bookingDate: string,
   barbershopId = DEFAULT_BARBERSHOP_ID,
+  staffId?: number | null,
 ): Promise<BookedInterval[]> {
   if (!isSupabaseConfigured()) return [];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from(REZERVACE_TABLE)
-    .select("booking_time, duration_minutes")
+    .select("booking_time, duration_minutes, staff_id")
     .eq("booking_date", bookingDate)
     .eq("barbershop_id", barbershopId)
     .neq("status", "canceled");
+
+  if (staffId != null && staffId > 0) {
+    query = query.eq("staff_id", staffId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("[fetchBookedIntervalsForDate]", error);
     throw error;
   }
 
-  return (data ?? []).map((row) => {
+  const fromReservations = (data ?? []).map((row) => {
     const r = row as { booking_time: string; duration_minutes: number | null };
     return {
       startMinutes: timeToMinutes(r.booking_time),
       durationMinutes: Number(r.duration_minutes) || 60,
     };
   });
+
+  try {
+    const blocks = await fetchStaffBlocksForDate(bookingDate, barbershopId, staffId);
+    const fromBlocks = blocks.map(blockToBookedInterval);
+    return [...fromReservations, ...fromBlocks];
+  } catch (e) {
+    console.warn("[fetchBookedIntervalsForDate] blocks", e);
+    return fromReservations;
+  }
 }
 
 /** @deprecated */

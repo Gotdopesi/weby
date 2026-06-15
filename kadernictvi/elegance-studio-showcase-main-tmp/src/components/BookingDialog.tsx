@@ -16,6 +16,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
+import { StylistPicker } from "@/components/StylistPicker";
 import { cn } from "@/lib/utils";
 import {
   type BookedInterval,
@@ -23,10 +24,18 @@ import {
   filterAvailableStartTimes,
   normalizeBookingTime,
 } from "@/lib/booking-slots";
+import { parseStaffWorkSchedule } from "@/lib/staff-schedule";
 import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { fetchServicesForBooking } from "@/lib/staff-services";
 import { withTimeout } from "@/lib/promise-timeout";
+import {
+  STAFF_ANY,
+  fetchActiveStaff,
+  staffDisplayName,
+  type StaffMember,
+  type StaffSelection,
+} from "@/lib/staff";
 import { toast } from "sonner";
 
 const SUBMIT_MS = 25_000;
@@ -55,7 +64,6 @@ const schema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
-/** Rozdělí „Jméno Příjmení“ pro sloupce first_name / last_name v Supabase. */
 function splitFullName(full: string): { first_name: string; last_name: string } {
   const t = full.trim().replace(/\s+/g, " ");
   const i = t.lastIndexOf(" ");
@@ -63,13 +71,31 @@ function splitFullName(full: string): { first_name: string; last_name: string } 
   return { first_name: t.slice(0, i), last_name: t.slice(i + 1) };
 }
 
-type Props = { trigger?: React.ReactNode };
+type Props = {
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialStaffId?: StaffSelection;
+  initialServiceName?: string;
+};
 
-export function BookingDialog({ trigger }: Props) {
+export function BookingDialog({
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+  initialStaffId = STAFF_ANY,
+  initialServiceName,
+}: Props) {
   const timesSectionRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
+
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [service, setService] = useState<string>("");
+  const [staffSelection, setStaffSelection] = useState<StaffSelection>(STAFF_ANY);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState<string>("");
   const [name, setName] = useState("");
@@ -83,45 +109,90 @@ export function BookingDialog({ trigger }: Props) {
   const [servicesList, setServicesList] = useState<ServiceOption[]>([]);
 
   const maxBookingDate = addDays(startOfDay(new Date()), MAX_BOOKING_DAYS);
+  const resolvedStaffId = staffSelection === STAFF_ANY ? null : staffSelection;
+
+  const reset = () => {
+    setStep(1);
+    setService("");
+    setStaffSelection(initialStaffId);
+    setDate(undefined);
+    setTime("");
+    setName("");
+    setEmail("");
+    setPhone("");
+    setNote("");
+    setLoading(false);
+    setConfirmed(false);
+    setBookedIntervals([]);
+    setLoadingTimes(false);
+  };
 
   useEffect(() => {
-    if (!open || !isSupabaseConfigured()) {
+    if (!open) return;
+    setStaffSelection(initialStaffId);
+    const hasStaff = initialStaffId !== STAFF_ANY;
+    const hasService = Boolean(initialServiceName?.trim());
+    if (hasStaff && hasService) setStep(3);
+    else if (hasStaff) setStep(2);
+    else setStep(1);
+  }, [open, initialStaffId, initialServiceName]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoadingStaff(true);
+    void fetchActiveStaff()
+      .then(setStaffList)
+      .finally(() => setLoadingStaff(false));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!isSupabaseConfigured()) {
       setServicesList(
         FALLBACK_SERVICES.map((s, i) => ({ ...s, id: -(i + 1), duration_minutes: 60 })),
       );
       return;
     }
-    void supabase
-      .from(SHOWCASE_TABLES.services)
-      .select("id, name, price, duration_minutes")
-      .eq("barbershop_id", DEFAULT_BARBERSHOP_ID)
-      .eq("is_active", true)
-      .order("name")
-      .then(({ data, error }) => {
-        if (error || !data?.length) {
+    void fetchServicesForBooking(DEFAULT_BARBERSHOP_ID, resolvedStaffId)
+      .then((list) => {
+        if (!list.length) {
           setServicesList(
             FALLBACK_SERVICES.map((s, i) => ({ ...s, id: -(i + 1), duration_minutes: 60 })),
           );
           return;
         }
         setServicesList(
-          data.map((s) => ({
+          list.map((s) => ({
             id: s.id,
             name: s.name,
-            price: Number(s.price),
-            duration_minutes: Number(s.duration_minutes),
+            price: s.price,
+            duration_minutes: s.duration_minutes,
           })),
         );
+      })
+      .catch(() => {
+        setServicesList(
+          FALLBACK_SERVICES.map((s, i) => ({ ...s, id: -(i + 1), duration_minutes: 60 })),
+        );
       });
-  }, [open]);
+  }, [open, resolvedStaffId]);
 
-  const reset = () => {
-    setStep(1); setService(""); setDate(undefined); setTime("");
-    setName(""); setEmail(""); setPhone(""); setNote("");
-    setLoading(false); setConfirmed(false);
-    setBookedIntervals([]);
-    setLoadingTimes(false);
-  };
+  useEffect(() => {
+    if (!service || servicesList.length === 0) return;
+    if (!servicesList.some((s) => String(s.id) === service)) {
+      setService("");
+      setTime("");
+    }
+  }, [servicesList, service]);
+
+  useEffect(() => {
+    if (!open || !initialServiceName?.trim() || servicesList.length === 0) return;
+    const needle = initialServiceName.trim().toLowerCase();
+    const match = servicesList.find((s) => s.name.trim().toLowerCase() === needle)
+      ?? servicesList.find((s) => s.name.trim().toLowerCase().includes(needle)
+        || needle.includes(s.name.trim().toLowerCase()));
+    if (match) setService(String(match.id));
+  }, [open, initialServiceName, servicesList]);
 
   const submit = async () => {
     const parsed = schema.safeParse({ name, email, phone, note: note || undefined });
@@ -136,7 +207,7 @@ export function BookingDialog({ trigger }: Props) {
     if (!isSupabaseConfigured()) {
       toast.error("Rezervace zatím není zapnutá.", {
         description:
-          "Na Vercelu nastav VITE_SUPABASE_URL a VITE_SUPABASE_ANON_KEY nebo VITE_SUPABASE_PUBLISHABLE_KEY, pak redeploy.",
+          "Na Vercelu nastav VITE_SUPABASE_URL a VITE_SUPABASE_ANON_KEY, pak redeploy.",
         duration: 14_000,
       });
       return;
@@ -165,6 +236,7 @@ export function BookingDialog({ trigger }: Props) {
             booking_time: time,
             status: "confirmed",
             barbershop_id: DEFAULT_BARBERSHOP_ID,
+            staff_id: resolvedStaffId,
             sms_sent: false,
           })
           .select("id")
@@ -189,11 +261,8 @@ export function BookingDialog({ trigger }: Props) {
         });
         if (!mailRes.ok) {
           const errBody = (await mailRes.json().catch(() => ({}))) as { error?: string };
-          console.warn("[booking email]", errBody);
           toast.message("Rezervace uložena.", {
-            description:
-              errBody.error ??
-              "Potvrzovací e-mail se nepodařilo odeslat — na Vercelu zkontrolujte RESEND_API_KEY a RESEND_FROM.",
+            description: errBody.error ?? "Potvrzovací e-mail se nepodařilo odeslat.",
           });
         } else {
           toast.success("Rezervace potvrzena — e-mail odeslán.");
@@ -216,21 +285,35 @@ export function BookingDialog({ trigger }: Props) {
 
   const selectedService = servicesList.find((s) => String(s.id) === service);
   const serviceDuration = selectedService?.duration_minutes ?? 60;
+  const serviceLabel = selectedService?.name;
+  const selectedStaffMember =
+    staffSelection === STAFF_ANY
+      ? null
+      : staffList.find((s) => s.id === staffSelection) ?? null;
+  const staffSchedule =
+    selectedStaffMember != null
+      ? parseStaffWorkSchedule(selectedStaffMember.work_schedule)
+      : null;
   const availableTimes =
     date && service
-      ? filterAvailableStartTimes(date, serviceDuration, bookedIntervals)
+      ? filterAvailableStartTimes(date, serviceDuration, bookedIntervals, new Date(), staffSchedule)
       : [];
-  const serviceLabel = selectedService?.name;
+  const staffLabel =
+    staffSelection === STAFF_ANY
+      ? "Nejbližší volný termín"
+      : selectedStaffMember
+        ? staffDisplayName(selectedStaffMember)
+        : "Vybraný kadeřník";
 
   useEffect(() => {
-    if (step !== 2 || !date) return;
+    if (step !== 3 || !date) return;
     let cancelled = false;
     const dayKey = format(date, "yyyy-MM-dd");
     setLoadingTimes(true);
     void (async () => {
       try {
         const intervals = await withTimeout(
-          fetchBookedIntervalsForDate(dayKey),
+          fetchBookedIntervalsForDate(dayKey, DEFAULT_BARBERSHOP_ID, resolvedStaffId),
           FETCH_SLOTS_MS,
           "Načítání volných časů",
         );
@@ -252,205 +335,323 @@ export function BookingDialog({ trigger }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [step, date]);
+  }, [step, date, resolvedStaffId]);
 
   useEffect(() => {
-    if (step !== 2 || !date || !time || !service) return;
-    const stillOk = filterAvailableStartTimes(date, serviceDuration, bookedIntervals).includes(
-      normalizeBookingTime(time),
-    );
+    if (step !== 3 || !date || !time || !service) return;
+    const stillOk = filterAvailableStartTimes(
+      date,
+      serviceDuration,
+      bookedIntervals,
+      new Date(),
+      staffSchedule,
+    ).includes(normalizeBookingTime(time));
     if (!stillOk) setTime("");
-  }, [step, date, time, service, serviceDuration, bookedIntervals]);
+  }, [step, date, time, service, serviceDuration, bookedIntervals, staffSchedule]);
+
+  const handleOpenChange = (o: boolean) => {
+    setOpen(o);
+    if (!o) setTimeout(reset, 200);
+  };
+
+  const dialogBody = (
+    <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+      {confirmed ? (
+        <div className="text-center py-6">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full gradient-gold">
+            <Check className="h-8 w-8 text-primary-foreground" strokeWidth={2.5} />
+          </div>
+          <h3 className="font-display text-3xl mb-2">Rezervace potvrzena</h3>
+          <p className="text-muted-foreground mb-6">
+            Těšíme se na vás! Brzy vám pošleme potvrzovací e-mail.
+          </p>
+          <div className="rounded-lg border border-border bg-muted/40 p-5 text-left text-sm space-y-1.5 max-w-sm mx-auto">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Služba</span>
+              <span className="font-medium">{serviceLabel}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Kadeřník</span>
+              <span className="font-medium text-right max-w-[55%]">{staffLabel}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Datum</span>
+              <span className="font-medium">
+                {date && format(date, "EEEE d. MMMM yyyy", { locale: cs })}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Čas</span>
+              <span className="font-medium">{time}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Jméno</span>
+              <span className="font-medium">{name}</span>
+            </div>
+          </div>
+          <Button type="button" className="mt-6" onClick={() => handleOpenChange(false)}>
+            Zavřít
+          </Button>
+        </div>
+      ) : (
+        <>
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-gold" /> Rezervace termínu
+            </DialogTitle>
+            <DialogDescription>Krok {step} ze 4</DialogDescription>
+          </DialogHeader>
+
+          {step === 1 && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Vyberte službu</Label>
+                <Select value={service} onValueChange={setService}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Zvolte službu..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {servicesList.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.name} —{" "}
+                        <span className="text-muted-foreground">
+                          {formatServicePrice(s.price)} · {s.duration_minutes} min
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button type="button" disabled={!service} onClick={() => setStep(2)}>
+                  Pokračovat
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Kdo vás bude čekat?</Label>
+                {loadingStaff ? (
+                  <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-gold" />
+                    Načítám tým…
+                  </div>
+                ) : (
+                  <>
+                    {staffList.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Seznam kadeřníků se načítá z databáze — zatím je k dispozici volba „Je mi to
+                        jedno“.
+                      </p>
+                    )}
+                    <StylistPicker
+                      staff={staffList}
+                      value={staffSelection}
+                      onChange={setStaffSelection}
+                    />
+                  </>
+                )}
+              </div>
+              <DialogFooter className="flex-row sm:justify-between">
+                <Button type="button" variant="ghost" onClick={() => setStep(1)}>
+                  Zpět
+                </Button>
+                <Button type="button" onClick={() => setStep(3)}>
+                  Pokračovat
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Vyberte datum</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP", { locale: cs }) : "Vyberte datum"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(d) => {
+                        setDate(d);
+                        setTime("");
+                        if (d) {
+                          requestAnimationFrame(() => {
+                            timesSectionRef.current?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            });
+                          });
+                        }
+                      }}
+                      disabled={(d) => {
+                        const today = startOfDay(new Date());
+                        return d < today || d > maxBookingDate || d.getDay() === 0;
+                      }}
+                      locale={cs}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {date && (
+                <div ref={timesSectionRef} className="space-y-2 scroll-mt-4">
+                  <Label>
+                    Dostupné časy
+                    {staffSelection !== STAFF_ANY && selectedStaffMember && (
+                      <span className="text-muted-foreground font-normal">
+                        {" "}
+                        — {staffDisplayName(selectedStaffMember)}
+                      </span>
+                    )}
+                  </Label>
+                  {loadingTimes ? (
+                    <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-gold" />
+                      Kontroluji volné termíny…
+                    </div>
+                  ) : availableTimes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Pro tento den bohužel nemáme volný termín.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                      {availableTimes.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setTime(t)}
+                          className={cn(
+                            "px-3 py-2 rounded-md border text-sm transition-all",
+                            time === t
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "border-border hover:border-gold hover:text-gold",
+                          )}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <DialogFooter className="flex-row sm:justify-between">
+                <Button type="button" variant="ghost" onClick={() => setStep(2)}>
+                  Zpět
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!date || !time || loadingTimes}
+                  onClick={() => setStep(4)}
+                >
+                  Pokračovat
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name">Jméno a příjmení</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Jana Nováková"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Telefon</Label>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+420 ..."
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vas@email.cz"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="note">Poznámka (volitelné)</Label>
+                <Textarea
+                  id="note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={3}
+                  placeholder="Přání, alergie, preference..."
+                />
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1">
+                <div>
+                  <span className="text-muted-foreground">Služba:</span> {serviceLabel}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Kadeřník:</span> {staffLabel}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Termín:</span>{" "}
+                  {date && format(date, "d. M. yyyy", { locale: cs })} v {time}
+                </div>
+              </div>
+
+              <DialogFooter className="flex-row sm:justify-between">
+                <Button type="button" variant="ghost" onClick={() => setStep(3)}>
+                  Zpět
+                </Button>
+                <Button type="button" onClick={() => void submit()} disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Potvrdit rezervaci
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </>
+      )}
+    </DialogContent>
+  );
+
+  if (trigger) {
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        {dialogBody}
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => { setOpen(o); if (!o) setTimeout(reset, 200); }}
-    >
-      <DialogTrigger asChild>
-        {trigger ?? <Button variant="default">Rezervovat termín</Button>}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[560px]">
-        {confirmed ? (
-          <div className="text-center py-6">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full gradient-gold">
-              <Check className="h-8 w-8 text-primary-foreground" strokeWidth={2.5} />
-            </div>
-            <h3 className="font-display text-3xl mb-2">Rezervace potvrzena</h3>
-            <p className="text-muted-foreground mb-6">
-              Těšíme se na vás! Brzy vám pošleme potvrzovací e-mail.
-            </p>
-            <div className="rounded-lg border border-border bg-muted/40 p-5 text-left text-sm space-y-1.5 max-w-sm mx-auto">
-              <div className="flex justify-between"><span className="text-muted-foreground">Služba</span><span className="font-medium">{serviceLabel}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Datum</span><span className="font-medium">{date && format(date, "EEEE d. MMMM yyyy", { locale: cs })}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Čas</span><span className="font-medium">{time}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Jméno</span><span className="font-medium">{name}</span></div>
-            </div>
-            <Button type="button" className="mt-6" onClick={() => setOpen(false)}>
-              Zavřít
-            </Button>
-          </div>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-gold" /> Rezervace termínu
-              </DialogTitle>
-              <DialogDescription>Krok {step} ze 3</DialogDescription>
-            </DialogHeader>
-
-            {step === 1 && (
-              <div className="space-y-4 py-2">
-                <div className="space-y-2">
-                  <Label>Vyberte službu</Label>
-                  <Select value={service} onValueChange={setService}>
-                    <SelectTrigger><SelectValue placeholder="Zvolte službu..." /></SelectTrigger>
-                    <SelectContent>
-                      {servicesList.map((s) => (
-                        <SelectItem key={s.id} value={String(s.id)}>
-                          {s.name} —{" "}
-                          <span className="text-muted-foreground">
-                            {formatServicePrice(s.price)} · {s.duration_minutes} min
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button type="button" disabled={!service} onClick={() => setStep(2)}>
-                    Pokračovat
-                  </Button>
-                </DialogFooter>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-4 py-2">
-                <div className="space-y-2">
-                  <Label>Vyberte datum</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP", { locale: cs }) : "Vyberte datum"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={(d) => {
-                          setDate(d);
-                          setTime("");
-                          if (d) {
-                            requestAnimationFrame(() => {
-                              timesSectionRef.current?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                              });
-                            });
-                          }
-                        }}
-                        disabled={(d) => {
-                          const today = startOfDay(new Date());
-                          return d < today || d > maxBookingDate || d.getDay() === 0;
-                        }}
-                        locale={cs}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {date && (
-                  <div ref={timesSectionRef} className="space-y-2 scroll-mt-4">
-                    <Label>Dostupné časy</Label>
-                    {loadingTimes ? (
-                      <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin text-gold" />
-                        Kontroluji volné termíny…
-                      </div>
-                    ) : availableTimes.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Pro tento den bohužel nemáme volný termín.</p>
-                    ) : (
-                      <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                        {availableTimes.map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setTime(t)}
-                            className={cn(
-                              "px-3 py-2 rounded-md border text-sm transition-all",
-                              time === t
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border hover:border-gold hover:text-gold",
-                            )}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <DialogFooter className="flex-row sm:justify-between">
-                  <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-                    Zpět
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={!date || !time || loadingTimes}
-                    onClick={() => setStep(3)}
-                  >
-                    Pokračovat
-                  </Button>
-                </DialogFooter>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-3 py-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name">Jméno a příjmení</Label>
-                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jana Nováková" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="phone">Telefon</Label>
-                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+420 ..." />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vas@email.cz" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="note">Poznámka (volitelné)</Label>
-                  <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Přání, alergie, preference..." />
-                </div>
-
-                <div className="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1">
-                  <div><span className="text-muted-foreground">Služba:</span> {serviceLabel}</div>
-                  <div><span className="text-muted-foreground">Termín:</span> {date && format(date, "d. M. yyyy", { locale: cs })} v {time}</div>
-                </div>
-
-                <DialogFooter className="flex-row sm:justify-between">
-                  <Button type="button" variant="ghost" onClick={() => setStep(2)}>
-                    Zpět
-                  </Button>
-                  <Button type="button" onClick={() => void submit()} disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Potvrdit rezervaci
-                  </Button>
-                </DialogFooter>
-              </div>
-            )}
-          </>
-        )}
-      </DialogContent>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {dialogBody}
     </Dialog>
   );
 }

@@ -24,22 +24,24 @@ export default function AdminReservationsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [calendarView, setCalendarView] = useState<"month" | "week">("month");
 
-  const { barbershopId } = useAdminBarbershop();
+  const { barbershopId, isStaff, staffName, staffId } = useAdminBarbershop();
   const readOnly = isReadOnlyAdminSession(userEmail);
 
   const loadReservations = useCallback(async () => {
     setLoadingList(true);
     try {
-      const { data, error } = await withTimeout(
-        supabase
-          .from(REZERVACE_TABLE)
-          .select("*")
-          .eq("barbershop_id", barbershopId)
-          .order("booking_date", { ascending: true })
-          .order("booking_time", { ascending: true }),
-        LIST_BOOT_MS,
-        "Načítání rezervací",
-      );
+      let query = supabase
+        .from(REZERVACE_TABLE)
+        .select("*")
+        .eq("barbershop_id", barbershopId)
+        .order("booking_date", { ascending: true })
+        .order("booking_time", { ascending: true });
+
+      if (isStaff && staffId) {
+        query = query.eq("staff_id", staffId);
+      }
+
+      const { data, error } = await withTimeout(query, LIST_BOOT_MS, "Načítání rezervací");
       if (error) {
         toast.error("Nepodařilo se načíst rezervace. Zkontrolujte oprávnění v Supabase (RLS).");
         return;
@@ -53,7 +55,7 @@ export default function AdminReservationsPage() {
     } finally {
       setLoadingList(false);
     }
-  }, [barbershopId]);
+  }, [barbershopId, isStaff, staffId]);
 
   useEffect(() => {
     if (ready && authed) void loadReservations();
@@ -81,14 +83,18 @@ export default function AdminReservationsPage() {
   }
 
   return (
-    <>
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-6">
+    <div className="pb-4 md:pb-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
         <div>
           <p className="text-gold tracking-[0.25em] text-xs uppercase mb-2">Administrace</p>
-          <h1 className="font-display text-4xl md:text-5xl">Kalendář rezervací</h1>
+          <h1 className="font-display text-4xl md:text-5xl">
+            {isStaff && staffName ? `Kalendář — ${staffName}` : "Kalendář rezervací"}
+          </h1>
           <div className="hairline w-20 mt-4 mb-2" />
           <p className="text-muted-foreground text-sm max-w-xl">
-            Měsíční přehled — klikněte na den s tečkami a uvidíte seznam klientů.
+            {isStaff
+              ? "Vaše rezervace — klikněte na den s tečkami pro detail klientů."
+              : "Měsíční přehled salónu — klikněte na den s tečkami a uvidíte seznam klientů."}
           </p>
           {readOnly && (
             <p className="mt-2 text-sm text-amber-800 dark:text-amber-200/90 bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2 inline-block">
@@ -165,6 +171,6 @@ export default function AdminReservationsPage() {
         onOpenChange={setAddOpen}
         onCreated={() => void loadReservations()}
       />
-    </>
+    </div>
   );
 }
