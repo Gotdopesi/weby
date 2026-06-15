@@ -3,6 +3,7 @@ import { rewrite } from "@vercel/functions";
 
 const hostToSiteId = new Map<string, string>();
 for (const site of sites.sites) {
+  if (site.deploy === false) continue;
   for (const host of site.hosts) {
     hostToSiteId.set(host.toLowerCase(), site.id);
   }

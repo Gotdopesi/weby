@@ -29,11 +29,9 @@ cd C:\Users\Dominik\Desktop\Weby\kadernictvi\elegance-studio-showcase-main-tmp
 node scripts/seed-dev-admins.mjs
 ```
 
-Skript:
-- vytvoří / aktualizuje 2 uživatele v Supabase Auth
-- propojí je v `showcase_barbershop_admins` (majitel + kadeřník Monika)
+Skript vytvoří / aktualizuje **4 účty** v Supabase Auth a propojí je v `showcase_barbershop_admins`.
 
-Předtím měj v DB spuštěné: `showcase_staff.sql` a `showcase_admin_roles.sql`.
+Předtím měj v DB: `showcase_staff.sql`, `showcase_admin_roles.sql`, pak `studio_elegance_team.sql`.
 
 ## 3. Přihlášení
 
@@ -43,16 +41,16 @@ npm run dev
 
 Otevři **http://localhost:8080/admin/login**
 
-Uvidíš žlutý box **„Dev — rychlé přihlášení“**:
-- **Majitel (test)** → kalendář celého salónu, statistiky, zákazníci
-- **Kadeřník Monika (test)** → jen její kalendář
+Uvidíš žlutý box **„Dev — rychlé přihlášení“** s majitelem a všemi 3 kadeřníky.
 
 Nebo ručně:
 
 | Role | E-mail | Heslo |
 |------|--------|-------|
 | Majitel | `dev.majitel@studio-elegance.test` | `DevMajitel26!` |
-| Kadeřník | `dev.monika@studio-elegance.test` | `DevMonika26!` |
+| Klára | `dev.klara@studio-elegance.test` | `DevKlara26!` |
+| Monika | `dev.monika@studio-elegance.test` | `DevMonika26!` |
+| Eliška | `dev.eliska@studio-elegance.test` | `DevEliska26!` |
 
 ## 4. Před nasazením na Vercel smaž
 

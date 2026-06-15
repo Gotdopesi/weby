@@ -1,5 +1,5 @@
 {
-  "$comment": "Jediný soubor pro mapování domén → projekt. Po změně domény uprav hosts + siteUrl a znovu deploy.",
+  "$comment": "Mapování domén → projekt. deploy:false = zatím se nebuildí (Donzi přidáš později).",
   "sites": [
     {
       "id": "dweby",
@@ -9,22 +9,6 @@
       "hosts": ["dweby.cz", "www.dweby.cz"],
       "hasApi": false,
       "buildEnv": {}
-    },
-    {
-      "id": "donzi",
-      "label": "Barbershop Donzi",
-      "projectDir": "kadernictvi/donzi-reservations-main",
-      "distPath": "sites/donzi",
-      "hosts": ["donzi.dweby.cz"],
-      "hasApi": true,
-      "buildEnv": {
-        "VITE_BARBERSHOP_ID": "5"
-      },
-      "siteUrl": "https://donzi.dweby.cz",
-      "siteUrlEnv": "SITE_URL_DONZI",
-      "resendFrom": "Donzi <rezervace@dweby.cz>",
-      "resendFromEnv": "RESEND_FROM_DONZI",
-      "defaultBarbershopName": "Barbershop Donzi"
     },
     {
       "id": "kadernictvi",
@@ -41,6 +25,23 @@
       "resendFrom": "Studio Elegance <rezervace@dweby.cz>",
       "resendFromEnv": "RESEND_FROM_KADERNICTVI",
       "defaultBarbershopName": "Studio Elegance"
+    },
+    {
+      "id": "donzi",
+      "label": "Barbershop Donzi",
+      "deploy": false,
+      "projectDir": "kadernictvi/donzi-reservations-main",
+      "distPath": "sites/donzi",
+      "hosts": ["donzi.dweby.cz"],
+      "hasApi": true,
+      "buildEnv": {
+        "VITE_BARBERSHOP_ID": "5"
+      },
+      "siteUrl": "https://donzi.dweby.cz",
+      "siteUrlEnv": "SITE_URL_DONZI",
+      "resendFrom": "Donzi <rezervace@dweby.cz>",
+      "resendFromEnv": "RESEND_FROM_DONZI",
+      "defaultBarbershopName": "Barbershop Donzi"
     }
   ]
 }

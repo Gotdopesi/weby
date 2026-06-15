@@ -7,10 +7,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const config = JSON.parse(readFileSync(join(root, "sites.config.json"), "utf8"));
 const distRoot = join(root, "dist");
 
+const activeSites = config.sites.filter((s) => s.deploy !== false);
+
 rmSync(distRoot, { recursive: true, force: true });
 mkdirSync(distRoot, { recursive: true });
 
-for (const site of config.sites) {
+for (const site of activeSites) {
   const cwd = join(root, site.projectDir);
   const outDir = join(distRoot, site.distPath);
   mkdirSync(outDir, { recursive: true });

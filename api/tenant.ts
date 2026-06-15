@@ -14,10 +14,11 @@ function hostFromRequest(req?: VercelRequest | Request): string {
 
 export function resolveSite(req?: VercelRequest | Request): SiteConfig | null {
   const host = hostFromRequest(req);
+  const active = sites.sites.filter((s) => s.deploy !== false);
   if (!host) return null;
   return (
-    sites.sites.find((s) => s.hosts.some((h) => h.toLowerCase() === host)) ??
-    sites.sites.find((s) => s.hasApi) ??
+    active.find((s) => s.hosts.some((h) => h.toLowerCase() === host)) ??
+    active.find((s) => s.hasApi) ??
     null
   );
 }

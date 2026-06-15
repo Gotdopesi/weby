@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_ADMIN_ACCESS, type AdminAccess, type AdminRole } from "@/lib/admin-access";
-import { devAdminRoleForEmail } from "@/lib/dev-admin-logins";
+import { devAdminRoleForEmail, devStaffFirstNameForEmail } from "@/lib/dev-admin-logins";
 import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
 import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
 import { staffDisplayName } from "@/lib/staff";
@@ -59,17 +59,18 @@ export function AdminBarbershopProvider({ children }: { children: ReactNode }) {
 
       let staffNameResolved = staffRow ? staffDisplayName(staffRow) : null;
 
-      // Dev fallback: Monika bez staff_id v DB — dohledat podle jména
+      // Dev fallback: kadeřník bez staff_id v DB — dohledat podle jména z dev účtu
       if (role === "staff" && staffId == null && import.meta.env.DEV) {
-        const { data: monika } = await supabase
+        const devFirst = devStaffFirstNameForEmail(userEmail) ?? "Monika";
+        const { data: devStaff } = await supabase
           .from(SHOWCASE_TABLES.staff)
           .select("id, first_name, last_name")
           .eq("barbershop_id", resolvedId)
-          .eq("first_name", "Monika")
+          .eq("first_name", devFirst)
           .maybeSingle();
-        if (monika?.id) {
-          staffId = Number(monika.id);
-          staffNameResolved = staffDisplayName(monika);
+        if (devStaff?.id) {
+          staffId = Number(devStaff.id);
+          staffNameResolved = staffDisplayName(devStaff);
         }
       }
 

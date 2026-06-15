@@ -1,12 +1,34 @@
 # Více domén na jednom Vercel projektu (`weby`)
 
+## Aktivní domény (teď)
+
+| Doména | Složka | Build výstup |
+|--------|--------|--------------|
+| `dweby.cz`, `www.dweby.cz` | `dweby-main` | `dist/sites/dweby` |
+| `kadernictvi.dweby.cz` | `kadernictvi/elegance-studio-showcase-main-tmp` | `dist/sites/kadernictvi` |
+
+Donzi (`donzi.dweby.cz`) je v configu připravený, ale má `"deploy": false` — zapneš později smazáním toho řádku.
+
 ## Jak to funguje
 
 1. **`sites.config.json`** — mapa doména → složka buildu + `VITE_BARBERSHOP_ID` + výchozí `siteUrl` / `resendFrom`.
 2. **`middleware.ts`** — podle `Host` přesměruje na `dist/sites/{id}/…`.
 3. **`api/tenant.ts`** — podle domény volajícího API nastaví odkazy v e-mailech a odesílatele (Resend).
 
-## Domény (výchozí)
+## Vercel — co nastavit
+
+1. Jeden projekt **`weby`**, root repozitáře = složka `Weby` (ne `kadernictvi`).
+2. **Settings → Domains** — přidej:
+   - `dweby.cz`
+   - `www.dweby.cz`
+   - `kadernictvi.dweby.cz`
+3. **DNS** u `dweby.cz`:
+   - `@` → A `76.76.21.21`
+   - `www` → CNAME `cname.vercel-dns.com`
+   - `kadernictvi` → CNAME `cname.vercel-dns.com` (subdoména)
+4. Push na `main` → Vercel sám buildne oba weby a middleware je rozdělí podle `Host`.
+
+## Domény (vše v configu)
 
 | Doména | Projekt | `VITE_BARBERSHOP_ID` (build) |
 |--------|---------|------------------------------|
