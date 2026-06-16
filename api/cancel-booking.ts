@@ -1,12 +1,20 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { getDefaultBarbershopName, getPublicSiteUrl } from "./tenant";
 
-const PRAGUE_TZ = "Europe/Prague";
 const REZERVACE_TABLE = "kadernictvi_rezervace";
 const KADERNICTVI_TABLE = "kadernictvi";
+const PRAGUE_TZ = "Europe/Prague";
 const MIN_HOURS_BEFORE = 24;
+
+function hostFromRequest(req: VercelRequest): string {
+  return (req.headers.host ?? "").split(":")[0].toLowerCase();
+}
+
+function getDefaultBarbershopName(req: VercelRequest): string {
+  if (hostFromRequest(req).includes("donzi")) return "Barbershop Donzi";
+  return "Studio Elegance";
+}
 
 function cancelSecret(): string {
   const s = process.env.CANCEL_SECRET?.trim() || process.env.CRON_SECRET?.trim();
@@ -18,27 +26,6 @@ function normalizeBookingTime(time: string): string {
   const m = time.trim().match(/^(\d{1,2}):(\d{2})/);
   if (!m) return time.trim();
   return `${m[1].padStart(2, "0")}:${m[2]}`;
-}
-
-export function createCancelToken(
-  reservationId: string,
-  bookingDate: string,
-  bookingTime: string,
-): string {
-  const time = normalizeBookingTime(bookingTime);
-  const payload = `${reservationId}|${bookingDate}|${time}`;
-  const sig = createHmac("sha256", cancelSecret()).update(payload).digest("base64url");
-  return Buffer.from(`${payload}|${sig}`).toString("base64url");
-}
-
-export function buildCancelReservationUrl(
-  req: VercelRequest,
-  reservationId: string,
-  bookingDate: string,
-  bookingTime: string,
-): string {
-  const token = createCancelToken(reservationId, bookingDate, bookingTime);
-  return `${getPublicSiteUrl(req)}/zrusit-rezervaci?token=${encodeURIComponent(token)}`;
 }
 
 function parseCancelToken(token: string): { id: string; bookingDate: string; bookingTime: string } | null {
@@ -65,7 +52,6 @@ function parseAppointmentPrague(dateStr: string, timeStr: string): Date {
   const [y, mo, d] = dateStr.split("-").map(Number);
   const [h, mi] = timeStr.split(":").map(Number);
   const utcGuess = Date.UTC(y, mo - 1, d, h, mi ?? 0, 0);
-
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: PRAGUE_TZ,
     year: "numeric",
@@ -75,7 +61,6 @@ function parseAppointmentPrague(dateStr: string, timeStr: string): Date {
     minute: "2-digit",
     hour12: false,
   });
-
   for (let offsetHours = -3; offsetHours <= 3; offsetHours++) {
     const probe = new Date(utcGuess + offsetHours * 3600_000);
     const parts = fmt.formatToParts(probe);
@@ -90,13 +75,11 @@ function parseAppointmentPrague(dateStr: string, timeStr: string): Date {
       return probe;
     }
   }
-
   return new Date(utcGuess);
 }
 
 function hoursUntilAppointment(bookingDate: string, bookingTime: string): number {
-  const start = parseAppointmentPrague(bookingDate, bookingTime);
-  return (start.getTime() - Date.now()) / 3_600_000;
+  return (parseAppointmentPrague(bookingDate, bookingTime).getTime() - Date.now()) / 3_600_000;
 }
 
 function canCancelByPolicy(bookingDate: string, bookingTime: string): boolean {
@@ -114,19 +97,19 @@ function createSupabaseAdmin() {
   });
 }
 
-async function findReservationTable(supabase: ReturnType<typeof createSupabaseAdmin>, id: string) {
-  const embed = `${KADERNICTVI_TABLE} ( name )`;
+async function loadReservation(supabase: ReturnType<typeof createSupabaseAdmin>, id: string) {
   const { data, error } = await supabase
     .from(REZERVACE_TABLE)
-    .select(
-      `id, first_name, last_name, service, booking_date, booking_time, status, ${embed}`,
-    )
+    .select(`id, first_name, last_name, service, booking_date, booking_time, status, ${KADERNICTVI_TABLE} ( name )`)
     .eq("id", id)
     .maybeSingle();
-  if (!error && data) {
-    return { table: REZERVACE_TABLE, data: data as Record<string, unknown> };
+
+  if (error) {
+    console.error("[cancel-booking] load", error.message);
+    return null;
   }
-  return null;
+  if (!data) return null;
+  return data as Record<string, unknown>;
 }
 
 function cors(res: VercelResponse) {
@@ -141,9 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const tokenRaw =
-      (req.method === "GET"
-        ? (req.query.token as string | undefined)
-        : undefined) ??
+      (req.method === "GET" ? (req.query.token as string | undefined) : undefined) ??
       (typeof req.body === "string" ? JSON.parse(req.body) : req.body)?.token;
 
     if (!tokenRaw || typeof tokenRaw !== "string") {
@@ -156,19 +137,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const supabase = createSupabaseAdmin();
-    const found = await findReservationTable(supabase, parsed.id);
+    const row = await loadReservation(supabase, parsed.id);
 
-    if (!found) {
-      return res.status(404).json({ error: "Rezervace už neexistuje — termín je volný." });
+    if (!row) {
+      return res.status(404).json({ error: "Rezervace nenalezena." });
     }
 
-    const row = found.data;
     const shop = row[KADERNICTVI_TABLE] as { name: string } | null;
     const bookingDate = String(row.booking_date);
     const bookingTime = normalizeBookingTime(String(row.booking_time));
 
     if (bookingDate !== parsed.bookingDate || bookingTime !== parsed.bookingTime) {
       return res.status(400).json({ error: "Odkaz neodpovídá aktuální rezervaci." });
+    }
+
+    if (String(row.status) === "canceled") {
+      return res.status(410).json({ error: "Rezervace už byla zrušena." });
     }
 
     const hoursLeft = hoursUntilAppointment(bookingDate, bookingTime);
@@ -202,7 +186,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { error: cancelErr } = await supabase
-      .from(found.table)
+      .from(REZERVACE_TABLE)
       .update({ status: "canceled" })
       .eq("id", parsed.id);
 
@@ -214,7 +198,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true, canceled: true, ...summary });
   } catch (e) {
     console.error("[cancel-booking]", e);
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return res.status(500).json({ error: message });
+    return res.status(500).json({
+      error: e instanceof Error ? e.message : "Unknown error",
+    });
   }
 }
