@@ -43,12 +43,15 @@ export function getPublicSiteUrl(req?: VercelRequest | Request): string {
 }
 
 export function getResendFrom(req?: VercelRequest | Request): string {
+  if (process.env.RESEND_USE_SANDBOX?.trim() === "true") {
+    return "Studio Elegance <onboarding@resend.dev>";
+  }
   const site = resolveSite(req);
   return (
     (site?.resendFromEnv && process.env[site.resendFromEnv]?.trim()) ||
     process.env.RESEND_FROM?.trim() ||
     site?.resendFrom ||
-    "Rezervace <onboarding@resend.dev>"
+    "Studio Elegance <onboarding@resend.dev>"
   );
 }
 

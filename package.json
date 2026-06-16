@@ -8,7 +8,8 @@
     "build": "node scripts/build-all.mjs",
     "dev:dweby": "npm run dev --prefix dweby-main",
     "dev:donzi": "npm run dev --prefix kadernictvi/donzi-reservations-main",
-    "dev:kadernictvi": "npm run dev --prefix kadernictvi/elegance-studio-showcase-main-tmp"
+    "dev:kadernictvi": "npm run dev --prefix kadernictvi/elegance-studio-showcase-main-tmp",
+    "dev:vercel": "vercel dev"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

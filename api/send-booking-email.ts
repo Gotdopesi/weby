@@ -20,8 +20,12 @@ function withDeploymentProtectionBypass(url: string): string {
   return u.toString();
 }
 
+function cancelSecretOptional(): string | null {
+  return process.env.CANCEL_SECRET?.trim() || process.env.CRON_SECRET?.trim() || null;
+}
+
 function cancelSecret(): string {
-  const s = process.env.CANCEL_SECRET?.trim() || process.env.CRON_SECRET?.trim();
+  const s = cancelSecretOptional();
   if (!s) throw new Error("CANCEL_SECRET or CRON_SECRET is required for cancel links.");
   return s;
 }
@@ -37,10 +41,13 @@ function buildCancelReservationUrl(
   reservationId: string,
   bookingDate: string,
   bookingTime: string,
-): string {
+): string | null {
+  const secret = cancelSecretOptional();
+  if (!secret) return null;
+
   const time = normalizeBookingTime(bookingTime);
   const payload = `${reservationId}|${bookingDate}|${time}`;
-  const sig = createHmac("sha256", cancelSecret()).update(payload).digest("base64url");
+  const sig = createHmac("sha256", secret).update(payload).digest("base64url");
   const token = Buffer.from(`${payload}|${sig}`).toString("base64url");
   const path = `${getPublicSiteUrl(req)}/zrusit-rezervaci?token=${encodeURIComponent(token)}`;
   return withDeploymentProtectionBypass(path);
@@ -54,13 +61,22 @@ type BookingEmailPayload = {
   barbershopName: string;
   barbershopEmail?: string | null;
   phone: string;
-  cancelUrl: string;
+  cancelUrl: string | null;
 };
 
 function buildBookingConfirmationHtml(p: BookingEmailPayload): string {
   const contact = p.barbershopEmail
     ? `<a href="mailto:${p.barbershopEmail}" style="color:#b8860b;text-decoration:none;">${p.barbershopEmail}</a>`
     : "viz web salónu";
+
+  const cancelBlock = p.cancelUrl
+    ? `<p style="margin:0 0 20px;color:#555;font-size:14px;line-height:1.6;">Rezervaci můžete zrušit online nejpozději 24&nbsp;hodin před termínem — tlačítko níže.</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            <tr><td align="center">
+              <a href="${p.cancelUrl}" style="display:inline-block;padding:14px 28px;background:#1a1a1a;color:#ffffff;text-decoration:none;font-size:15px;border-radius:8px;font-family:Georgia,serif;">Zrušit rezervaci</a>
+            </td></tr>
+          </table>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="cs">
@@ -95,12 +111,7 @@ function buildBookingConfirmationHtml(p: BookingEmailPayload): string {
             </tr>
           </table>
           <p style="margin:0 0 24px;color:#555;font-size:14px;">Kontakt salónu: ${contact}</p>
-          <p style="margin:0 0 20px;color:#555;font-size:14px;line-height:1.6;">Rezervaci můžete zrušit online nejpozději 24&nbsp;hodin před termínem — tlačítko níže.</p>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-            <tr><td align="center">
-              <a href="${p.cancelUrl}" style="display:inline-block;padding:14px 28px;background:#1a1a1a;color:#ffffff;text-decoration:none;font-size:15px;border-radius:8px;font-family:Georgia,serif;">Zrušit rezervaci</a>
-            </td></tr>
-          </table>
+          ${cancelBlock}
         </td></tr>
         <tr><td style="padding:0 32px 28px;">
           <p style="margin:0;color:#aaa;font-size:12px;text-align:center;">Tato zpráva byla odeslána automaticky po online rezervaci.</p>
@@ -180,6 +191,32 @@ async function loadReservation(
   };
 }
 
+async function sendConfirmationEmail(
+  resend: Resend,
+  from: string,
+  to: string,
+  subject: string,
+  html: string,
+) {
+  const primary = await resend.emails.send({ from, to: [to], subject, html });
+  if (!primary.error) return primary;
+
+  const msg = primary.error.message ?? "";
+  const domainIssue =
+    msg.includes("domain") ||
+    msg.includes("verified") ||
+    msg.includes("not authorized") ||
+    msg.includes("from address");
+
+  if (!domainIssue || from.includes("onboarding@resend.dev")) {
+    return primary;
+  }
+
+  const fallbackFrom = "Studio Elegance <onboarding@resend.dev>";
+  console.warn("[send-booking-email] retry with test from:", msg);
+  return resend.emails.send({ from: fallbackFrom, to: [to], subject, html });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -222,11 +259,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const resend = new Resend(requireEnv("RESEND_API_KEY"));
     const from = getResendFrom(req);
 
-    const { data: sent, error: sendErr } = await resend.emails.send({
+    const { data: sent, error: sendErr } = await sendConfirmationEmail(
+      resend,
       from,
-      to: [row.email],
-      subject: `Potvrzení rezervace — ${row.barbershopName}`,
-      html: buildBookingConfirmationHtml({
+      row.email,
+      `Potvrzení rezervace — ${row.barbershopName}`,
+      buildBookingConfirmationHtml({
         customerName,
         service: row.service,
         bookingDate: row.booking_date,
@@ -236,7 +274,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         phone: row.phone,
         cancelUrl,
       }),
-    });
+    );
 
     if (sendErr) {
       console.error("[send-booking-email] resend", sendErr);

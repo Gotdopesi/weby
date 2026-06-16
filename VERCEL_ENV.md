@@ -17,7 +17,7 @@ Bez těchto proměnných rezervace / e-maily nefungují:
 | `CRON_SECRET` | Cron SMS |
 | `CANCEL_SECRET` | Odkaz zrušení v e-mailu |
 
-**Odesílatel e-mailu (`RESEND_FROM`) nemusíš nastavovat** — pro `kadernictvi.dweby.cz` se použije `Studio Elegance <rezervace@dweby.cz>` z `sites.config.json`. Volitelně: `RESEND_FROM_KADERNICTVI`.
+**Odesílatel e-mailu:** výchozí `Studio Elegance <rezervace@dweby.cz>` z `sites.config.json`. Pokud doména v Resend ještě není ověřená, API automaticky zkusí `onboarding@resend.dev`. Pro testování: `RESEND_USE_SANDBOX=true` na Vercelu.
 
 **Názvy tabulek (`showcase_*`) na Vercel nepotřebuješ** — jsou v kódu jako `kadernictvi_*`.
 
@@ -31,8 +31,8 @@ Bez těchto proměnných rezervace / e-maily nefungují:
 | `VITE_SUPABASE_URL` | Build + klient | Stejné URL jako `SUPABASE_URL` |
 | `VITE_SUPABASE_ANON_KEY` | Build + klient | Anon / publishable klíč |
 | `RESEND_API_KEY` | Server | E-maily z rezervací |
-| `CRON_SECRET` | Server | Vercel Cron → `/api/cron/send-sms` |
-| `CANCEL_SECRET` | Server | Odkaz zrušení rezervace v e-mailu |
+| `CRON_SECRET` | Server | Vercel Cron → `/api/cron/send-sms` (může sloužit i jako fallback pro e-mail) |
+| `CANCEL_SECRET` | Server | Odkaz zrušení v e-mailu (volitelné — bez něj e-mail pošle bez tlačítka zrušit) |
 | `BULKGATE_APP_ID` | Server | SMS připomínky |
 | `BULKGATE_APP_TOKEN` | Server | SMS připomínky |
 
