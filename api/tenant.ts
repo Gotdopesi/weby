@@ -1,7 +1,46 @@
 import type { VercelRequest } from "@vercel/node";
-import sites from "../sites.config.json";
 
-export type SiteConfig = (typeof sites.sites)[number];
+type SiteEntry = {
+  id: string;
+  hosts: string[];
+  hasApi?: boolean;
+  deploy?: boolean;
+  siteUrl?: string;
+  siteUrlEnv?: string;
+  resendFrom?: string;
+  resendFromEnv?: string;
+  defaultBarbershopName?: string;
+};
+
+/** Inline — na Vercelu se JSON import občas rozbije; drž v sync se sites.config.json. */
+const SITES: SiteEntry[] = [
+  {
+    id: "dweby",
+    hosts: ["dweby.cz", "www.dweby.cz"],
+    hasApi: false,
+  },
+  {
+    id: "kadernictvi",
+    hosts: ["kadernictvi.dweby.cz"],
+    hasApi: true,
+    siteUrl: "https://kadernictvi.dweby.cz",
+    siteUrlEnv: "SITE_URL_KADERNICTVI",
+    resendFrom: "Studio Elegance <rezervace@dweby.cz>",
+    resendFromEnv: "RESEND_FROM_KADERNICTVI",
+    defaultBarbershopName: "Studio Elegance",
+  },
+  {
+    id: "donzi",
+    hosts: ["donzi.dweby.cz"],
+    hasApi: true,
+    deploy: false,
+    siteUrl: "https://donzi.dweby.cz",
+    siteUrlEnv: "SITE_URL_DONZI",
+    resendFrom: "Donzi <rezervace@dweby.cz>",
+    resendFromEnv: "RESEND_FROM_DONZI",
+    defaultBarbershopName: "Barbershop Donzi",
+  },
+];
 
 function hostFromRequest(req?: VercelRequest | Request): string {
   if (!req) return "";
@@ -12,9 +51,9 @@ function hostFromRequest(req?: VercelRequest | Request): string {
   return (h ?? "").split(":")[0].toLowerCase();
 }
 
-export function resolveSite(req?: VercelRequest | Request): SiteConfig | null {
+export function resolveSite(req?: VercelRequest | Request): SiteEntry | null {
   const host = hostFromRequest(req);
-  const active = sites.sites.filter((s) => s.deploy !== false);
+  const active = SITES.filter((s) => s.deploy !== false);
   if (!host) return null;
   return (
     active.find((s) => s.hosts.some((h) => h.toLowerCase() === host)) ??
@@ -39,7 +78,7 @@ export function getPublicSiteUrl(req?: VercelRequest | Request): string {
     }
   }
 
-  return site?.siteUrl ?? "https://donzi.dweby.cz";
+  return site?.siteUrl ?? "https://kadernictvi.dweby.cz";
 }
 
 export function getResendFrom(req?: VercelRequest | Request): string {

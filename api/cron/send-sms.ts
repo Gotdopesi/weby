@@ -1,17 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { addHours } from "date-fns";
-import {
-  KADERNICTVI_TABULKY,
-  kadernictviTableFromEnv,
-  rezervaceTableFromEnv,
-  smsTableFromEnv,
-} from "../lib/kadernictvi-tables";
 
+const REZERVACE_TABLE = "kadernictvi_rezervace";
+const BARBERSHOP_TABLE = "kadernictvi";
+const SMS_VYUCTOVANI_TABLE = "kadernictvi_sms";
 const PRAGUE_TZ = "Europe/Prague";
-const REZERVACE_TABLE = rezervaceTableFromEnv();
-const BARBERSHOP_TABLE = kadernictviTableFromEnv();
-const SMS_VYUCTOVANI_TABLE = smsTableFromEnv();
 const DEFAULT_SMS_UNIT_COST = 1;
 const DEFAULT_SMS_BILLING_MULTIPLIER = 1.6;
 
@@ -127,8 +121,8 @@ async function loadPendingRows(supabase: SupabaseClient): Promise<{
   tableUsed: string;
 }> {
   const embedShop =
-    `${KADERNICTVI_TABULKY.kadernictvi} ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )`;
-  const tablesToTry = [...new Set([REZERVACE_TABLE, KADERNICTVI_TABULKY.rezervace])];
+    `${BARBERSHOP_TABLE} ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )`;
+  const tablesToTry = [REZERVACE_TABLE];
 
   for (const table of tablesToTry) {
     const { data, error } = await supabase
@@ -140,7 +134,7 @@ async function loadPendingRows(supabase: SupabaseClient): Promise<{
 
     const rows = (data ?? []).map((r) => {
       const raw = r as Record<string, unknown>;
-      const shopRaw = raw[KADERNICTVI_TABULKY.kadernictvi] as RezervaceRow["shop"] | null;
+      const shopRaw = raw[BARBERSHOP_TABLE] as RezervaceRow["shop"] | null;
       return {
         id: String(raw.id),
         phone: String(raw.phone),

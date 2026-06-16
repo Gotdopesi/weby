@@ -2,10 +2,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { getDefaultBarbershopName, getPublicSiteUrl } from "./tenant";
-import { KADERNICTVI_TABULKY, rezervaceTableFromEnv } from "./lib/kadernictvi-tables";
 
 const PRAGUE_TZ = "Europe/Prague";
-const REZERVACE_TABLE = rezervaceTableFromEnv();
+const REZERVACE_TABLE = "kadernictvi_rezervace";
+const KADERNICTVI_TABLE = "kadernictvi";
 const MIN_HOURS_BEFORE = 24;
 
 function cancelSecret(): string {
@@ -115,7 +115,7 @@ function createSupabaseAdmin() {
 }
 
 async function findReservationTable(supabase: ReturnType<typeof createSupabaseAdmin>, id: string) {
-  const embed = `${KADERNICTVI_TABULKY.kadernictvi} ( name )`;
+  const embed = `${KADERNICTVI_TABLE} ( name )`;
   const { data, error } = await supabase
     .from(REZERVACE_TABLE)
     .select(
@@ -163,7 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const row = found.data;
-    const shop = row[KADERNICTVI_TABULKY.kadernictvi] as { name: string } | null;
+    const shop = row[KADERNICTVI_TABLE] as { name: string } | null;
     const bookingDate = String(row.booking_date);
     const bookingTime = normalizeBookingTime(String(row.booking_time));
 
