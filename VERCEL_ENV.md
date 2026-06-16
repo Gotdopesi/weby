@@ -50,13 +50,15 @@ Build script z `sites.config.json` → `buildEnv` nastaví ID automaticky. Na Ve
 
 ## Volitelné — názvy tabulek (výchozí už jsou `kadernictvi_*`)
 
-Jen když bys měl jinou DB:
+Jen když bys měl jinou DB. **Smaž na Vercelu** staré hodnoty `showcase_*` — kód je teď přemapuje, ale build je bezpečnější bez nich.
 
 | Proměnná | Výchozí |
 |----------|---------|
 | `SUPABASE_REZERVACE_TABLE` | `kadernictvi_rezervace` |
 | `SUPABASE_KADERNICTVI_TABLE` | `kadernictvi` |
 | `SUPABASE_SMS_TABLE` | `kadernictvi_sms` |
+
+**Nepoužívej:** `showcase_rezervace`, `showcase_barbershops` — tabulky už neexistují.
 
 ---
 

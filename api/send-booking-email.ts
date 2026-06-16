@@ -7,8 +7,9 @@ import {
   getPublicSiteUrl,
   getResendFrom,
 } from "./tenant";
+import { KADERNICTVI_TABULKY, rezervaceTableFromEnv } from "./lib/kadernictvi-tables";
 
-const REZERVACE_TABLES = ["kadernictvi_rezervace", "rezervace"] as const;
+const REZERVACE_TABLE = rezervaceTableFromEnv();
 
 function withDeploymentProtectionBypass(url: string): string {
   const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
@@ -146,42 +147,37 @@ async function loadReservation(
   reservationId: string,
   defaultShopName: string,
 ): Promise<{ row: ReservationRow | null; error?: string }> {
-  for (const table of REZERVACE_TABLES) {
-    const embed = table.startsWith("kadernictvi")
-      ? "kadernictvi ( name, email )"
-      : "barbershops ( name, email )";
+  const embed = `${KADERNICTVI_TABULKY.kadernictvi} ( name, email )`;
 
-    const { data, error } = await supabase
-      .from(table)
-      .select(
-        `id, first_name, last_name, email, phone, service, booking_date, booking_time, kadernictvi_id, ${embed}`,
-      )
-      .eq("id", reservationId)
-      .single();
+  const { data, error } = await supabase
+    .from(REZERVACE_TABLE)
+    .select(
+      `id, first_name, last_name, email, phone, service, booking_date, booking_time, kadernictvi_id, ${embed}`,
+    )
+    .eq("id", reservationId)
+    .single();
 
-    if (error) continue;
-
-    const raw = data as Record<string, unknown>;
-    const shopKey = table.startsWith("kadernictvi") ? "kadernictvi" : "barbershops";
-    const shop = raw[shopKey] as { name: string; email: string | null } | null;
-
-    return {
-      row: {
-        id: String(raw.id),
-        first_name: String(raw.first_name),
-        last_name: String(raw.last_name),
-        email: String(raw.email),
-        phone: String(raw.phone),
-        service: String(raw.service),
-        booking_date: String(raw.booking_date),
-        booking_time: String(raw.booking_time),
-        barbershopName: shop?.name ?? defaultShopName,
-        barbershopEmail: shop?.email ?? null,
-      },
-    };
+  if (error) {
+    return { row: null, error: error.message };
   }
 
-  return { row: null, error: "Reservation not found" };
+  const raw = data as Record<string, unknown>;
+  const shop = raw[KADERNICTVI_TABULKY.kadernictvi] as { name: string; email: string | null } | null;
+
+  return {
+    row: {
+      id: String(raw.id),
+      first_name: String(raw.first_name),
+      last_name: String(raw.last_name),
+      email: String(raw.email),
+      phone: String(raw.phone),
+      service: String(raw.service),
+      booking_date: String(raw.booking_date),
+      booking_time: String(raw.booking_time),
+      barbershopName: shop?.name ?? defaultShopName,
+      barbershopEmail: shop?.email ?? null,
+    },
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

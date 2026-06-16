@@ -1,14 +1,17 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { addHours } from "date-fns";
+import {
+  KADERNICTVI_TABULKY,
+  kadernictviTableFromEnv,
+  rezervaceTableFromEnv,
+  smsTableFromEnv,
+} from "../lib/kadernictvi-tables";
 
 const PRAGUE_TZ = "Europe/Prague";
-const REZERVACE_TABLE =
-  (process.env.SUPABASE_REZERVACE_TABLE ?? process.env.VITE_SUPABASE_REZERVACE_TABLE ?? "kadernictvi_rezervace").trim();
-const BARBERSHOP_TABLE =
-  (process.env.SUPABASE_KADERNICTVI_TABLE ?? "kadernictvi").trim();
-const SMS_VYUCTOVANI_TABLE =
-  (process.env.SUPABASE_SMS_VYUCTOVANI_TABLE ?? "kadernictvi_sms").trim();
+const REZERVACE_TABLE = rezervaceTableFromEnv();
+const BARBERSHOP_TABLE = kadernictviTableFromEnv();
+const SMS_VYUCTOVANI_TABLE = smsTableFromEnv();
 const DEFAULT_SMS_UNIT_COST = 1;
 const DEFAULT_SMS_BILLING_MULTIPLIER = 1.6;
 
@@ -123,25 +126,21 @@ async function loadPendingRows(supabase: SupabaseClient): Promise<{
   error?: string;
   tableUsed: string;
 }> {
-  const embedLegacy =
-    "barbershops ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )";
-  const embedShowcase =
-    "kadernictvi ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )";
-  const tablesToTry = [...new Set([REZERVACE_TABLE, "kadernictvi_rezervace", "rezervace"])];
+  const embedShop =
+    `${KADERNICTVI_TABULKY.kadernictvi} ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )`;
+  const tablesToTry = [...new Set([REZERVACE_TABLE, KADERNICTVI_TABULKY.rezervace])];
 
   for (const table of tablesToTry) {
-    const embed = table.startsWith("kadernictvi") ? embedShowcase : embedLegacy;
     const { data, error } = await supabase
       .from(table)
-      .select(`id, phone, booking_date, booking_time, sms_sent, kadernictvi_id, pracovnik_id, ${embed}`)
+      .select(`id, phone, booking_date, booking_time, sms_sent, kadernictvi_id, pracovnik_id, ${embedShop}`)
       .eq("sms_sent", false);
 
     if (error) continue;
 
-    const shopKey = table.startsWith("kadernictvi") ? "kadernictvi" : "barbershops";
     const rows = (data ?? []).map((r) => {
       const raw = r as Record<string, unknown>;
-      const shopRaw = raw[shopKey] as RezervaceRow["shop"] | null;
+      const shopRaw = raw[KADERNICTVI_TABULKY.kadernictvi] as RezervaceRow["shop"] | null;
       return {
         id: String(raw.id),
         phone: String(raw.phone),

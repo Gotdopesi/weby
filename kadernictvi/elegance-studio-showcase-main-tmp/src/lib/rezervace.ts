@@ -1,7 +1,7 @@
-import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
+import { KADERNICTVI_TABULKY, resolveKadernictviTable } from "@/lib/kadernictvi-tables";
 
-/** Název tabulky rezervací v Supabase (výchozí kadernictvi_rezervace). */
-export const REZERVACE_TABLE = (
-  ((import.meta.env.VITE_SUPABASE_REZERVACE_TABLE as string | undefined) ?? "").trim() ||
-  KADERNICTVI_TABULKY.rezervace
+/** Název tabulky rezervací — vždy kadernictvi_rezervace (i když env má staré showcase_*). */
+export const REZERVACE_TABLE = resolveKadernictviTable(
+  import.meta.env.VITE_SUPABASE_REZERVACE_TABLE,
+  KADERNICTVI_TABULKY.rezervace,
 ) as typeof KADERNICTVI_TABULKY.rezervace;

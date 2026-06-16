@@ -104,13 +104,16 @@ export type Database = {
       kadernictvi_rezervace: {
         Row: {
           kadernictvi_id: number | null
+          pracovnik_id: number | null
           booking_date: string
           booking_time: string
           created_at: string
+          duration_minutes: number | null
           email: string
           first_name: string
           id: string
           last_name: string
+          note: string | null
           phone: string
           service: string
           service_id: number | null
@@ -120,13 +123,16 @@ export type Database = {
         }
         Insert: {
           kadernictvi_id?: number | null
+          pracovnik_id?: number | null
           booking_date: string
           booking_time: string
           created_at?: string
+          duration_minutes?: number | null
           email: string
           first_name: string
           id?: string
           last_name: string
+          note?: string | null
           phone: string
           service: string
           service_id?: number | null
@@ -136,13 +142,16 @@ export type Database = {
         }
         Update: {
           kadernictvi_id?: number | null
+          pracovnik_id?: number | null
           booking_date?: string
           booking_time?: string
           created_at?: string
+          duration_minutes?: number | null
           email?: string
           first_name?: string
           id?: string
           last_name?: string
+          note?: string | null
           phone?: string
           service?: string
           service_id?: number | null

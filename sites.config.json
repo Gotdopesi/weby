@@ -19,7 +19,8 @@
       "hasApi": true,
       "buildEnv": {
         "VITE_KADERNICTVI_ID": "1",
-        "VITE_BARBERSHOP_ID": "1"
+        "VITE_BARBERSHOP_ID": "1",
+        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace"
       },
       "siteUrl": "https://kadernictvi.dweby.cz",
       "siteUrlEnv": "SITE_URL_KADERNICTVI",
@@ -37,7 +38,8 @@
       "hasApi": true,
       "buildEnv": {
         "VITE_KADERNICTVI_ID": "5",
-        "VITE_BARBERSHOP_ID": "5"
+        "VITE_BARBERSHOP_ID": "5",
+        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace"
       },
       "siteUrl": "https://donzi.dweby.cz",
       "siteUrlEnv": "SITE_URL_DONZI",

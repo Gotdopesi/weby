@@ -1,12 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { KADERNICTVI_TABULKY, rezervaceTableFromEnv, smsTableFromEnv } from "./lib/kadernictvi-tables";
 
-const REZERVACE_TABLE =
-  (process.env.SUPABASE_REZERVACE_TABLE ?? process.env.VITE_SUPABASE_REZERVACE_TABLE ?? "kadernictvi_rezervace").trim();
-const STAFF_BLOCKS_TABLE = "kadernictvi_pracovnik_blokace";
-const SMS_VYUCTOVANI_TABLE =
-  (process.env.SUPABASE_SMS_VYUCTOVANI_TABLE ?? "kadernictvi_sms").trim();
+const REZERVACE_TABLE = rezervaceTableFromEnv();
+const STAFF_BLOCKS_TABLE = KADERNICTVI_TABULKY.pracovnikBlokace;
+const SMS_VYUCTOVANI_TABLE = smsTableFromEnv();
 const DEFAULT_SMS_UNIT_COST = 1;
 const DEFAULT_SMS_BILLING_MULTIPLIER = 1.6;
 

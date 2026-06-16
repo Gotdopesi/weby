@@ -2,9 +2,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { getDefaultBarbershopName, getPublicSiteUrl } from "./tenant";
+import { KADERNICTVI_TABULKY, rezervaceTableFromEnv } from "./lib/kadernictvi-tables";
 
 const PRAGUE_TZ = "Europe/Prague";
-const REZERVACE_TABLES = ["kadernictvi_rezervace", "rezervace"] as const;
+const REZERVACE_TABLE = rezervaceTableFromEnv();
 const MIN_HOURS_BEFORE = 24;
 
 function cancelSecret(): string {
@@ -114,20 +115,16 @@ function createSupabaseAdmin() {
 }
 
 async function findReservationTable(supabase: ReturnType<typeof createSupabaseAdmin>, id: string) {
-  for (const table of REZERVACE_TABLES) {
-    const embed = table.startsWith("kadernictvi")
-      ? "kadernictvi ( name )"
-      : "barbershops ( name )";
-    const { data, error } = await supabase
-      .from(table)
-      .select(
-        `id, first_name, last_name, service, booking_date, booking_time, status, ${embed}`,
-      )
-      .eq("id", id)
-      .maybeSingle();
-    if (!error && data) {
-      return { table, data: data as Record<string, unknown> };
-    }
+  const embed = `${KADERNICTVI_TABULKY.kadernictvi} ( name )`;
+  const { data, error } = await supabase
+    .from(REZERVACE_TABLE)
+    .select(
+      `id, first_name, last_name, service, booking_date, booking_time, status, ${embed}`,
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!error && data) {
+    return { table: REZERVACE_TABLE, data: data as Record<string, unknown> };
   }
   return null;
 }
@@ -166,8 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const row = found.data;
-    const shopKey = found.table.startsWith("kadernictvi") ? "kadernictvi" : "barbershops";
-    const shop = row[shopKey] as { name: string } | null;
+    const shop = row[KADERNICTVI_TABULKY.kadernictvi] as { name: string } | null;
     const bookingDate = String(row.booking_date);
     const bookingTime = normalizeBookingTime(String(row.booking_time));
 
