@@ -3,20 +3,42 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createHmac } from "node:crypto";
 import { Resend } from "resend";
 
-const REZERVACE_TABLES = ["kadernictvi_rezervace", "rezervace"] as const;
+import { rezervaceTableFromEnv } from "./lib/kadernictvi-tables";
+
+const REZERVACE_TABLE = rezervaceTableFromEnv();
+
+/** Odesílatel z sites.config / env — bez nutnosti RESEND_FROM na Vercelu pro Studio Elegance. */
+function getResendFrom(req?: VercelRequest): string {
+  const host = (req?.headers?.host ?? "").split(":")[0].toLowerCase();
+  if (host.includes("kadernictvi") || host.includes("studio-elegance")) {
+    return (
+      process.env.RESEND_FROM_KADERNICTVI?.trim() ||
+      process.env.RESEND_FROM?.trim() ||
+      "Studio Elegance <rezervace@dweby.cz>"
+    );
+  }
+  return (
+    process.env.RESEND_FROM_DONZI?.trim() ||
+    process.env.RESEND_FROM?.trim() ||
+    "Studio Elegance <rezervace@dweby.cz>"
+  );
+}
 
 /** Inline — Vercel serverless nenačítá api/lib/ jako samostatný modul. */
-function getPublicSiteUrl(): string {
-  const raw = process.env.SITE_URL?.trim();
-  if (raw) {
+function getPublicSiteUrl(req?: VercelRequest): string {
+  const host = (req?.headers?.host ?? "").split(":")[0].toLowerCase();
+  const fromEnv =
+    process.env.SITE_URL_KADERNICTVI?.trim() ||
+    process.env.SITE_URL?.trim();
+  if (fromEnv) {
     try {
-      const origin = new URL(raw.startsWith("http") ? raw : `https://${raw}`).origin;
-      // *.vercel.app má Deployment Protection → přihlášení k Vercelu v e-mailu
+      const origin = new URL(fromEnv.startsWith("http") ? fromEnv : `https://${fromEnv}`).origin;
       if (!origin.includes("vercel.app")) return origin;
     } catch {
       /* fallback */
     }
   }
+  if (host.includes("donzi")) return "https://donzi.dweby.cz";
   return "https://kadernictvi.dweby.cz";
 }
 
@@ -43,6 +65,7 @@ function normalizeBookingTime(time: string): string {
 }
 
 function buildCancelReservationUrl(
+  req: VercelRequest,
   reservationId: string,
   bookingDate: string,
   bookingTime: string,
@@ -51,7 +74,7 @@ function buildCancelReservationUrl(
   const payload = `${reservationId}|${bookingDate}|${time}`;
   const sig = createHmac("sha256", cancelSecret()).update(payload).digest("base64url");
   const token = Buffer.from(`${payload}|${sig}`).toString("base64url");
-  const path = `${getPublicSiteUrl()}/zrusit-rezervaci?token=${encodeURIComponent(token)}`;
+  const path = `${getPublicSiteUrl(req)}/zrusit-rezervaci?token=${encodeURIComponent(token)}`;
   return withDeploymentProtectionBypass(path);
 }
 
@@ -160,42 +183,37 @@ async function loadReservation(
   supabase: SupabaseClient,
   reservationId: string,
 ): Promise<{ row: ReservationRow | null; error?: string }> {
-  for (const table of REZERVACE_TABLES) {
-    const embed = table.startsWith("kadernictvi")
-      ? "kadernictvi ( name, email )"
-      : "barbershops ( name, email )";
+  const embed = "kadernictvi ( name, email )";
 
-    const { data, error } = await supabase
-      .from(table)
-      .select(
-        `id, first_name, last_name, email, phone, service, booking_date, booking_time, kadernictvi_id, ${embed}`,
-      )
-      .eq("id", reservationId)
-      .single();
+  const { data, error } = await supabase
+    .from(REZERVACE_TABLE)
+    .select(
+      `id, first_name, last_name, email, phone, service, booking_date, booking_time, kadernictvi_id, ${embed}`,
+    )
+    .eq("id", reservationId)
+    .single();
 
-    if (error) continue;
-
-    const raw = data as Record<string, unknown>;
-    const shopKey = table.startsWith("kadernictvi") ? "kadernictvi" : "barbershops";
-    const shop = raw[shopKey] as { name: string; email: string | null } | null;
-
-    return {
-      row: {
-        id: String(raw.id),
-        first_name: String(raw.first_name),
-        last_name: String(raw.last_name),
-        email: String(raw.email),
-        phone: String(raw.phone),
-        service: String(raw.service),
-        booking_date: String(raw.booking_date),
-        booking_time: String(raw.booking_time),
-        barbershopName: shop?.name ?? "Barbershop Donzi",
-        barbershopEmail: shop?.email ?? null,
-      },
-    };
+  if (error) {
+    return { row: null, error: error.message };
   }
 
-  return { row: null, error: "Reservation not found" };
+  const raw = data as Record<string, unknown>;
+  const shop = raw.kadernictvi as { name: string; email: string | null } | null;
+
+  return {
+    row: {
+      id: String(raw.id),
+      first_name: String(raw.first_name),
+      last_name: String(raw.last_name),
+      email: String(raw.email),
+      phone: String(raw.phone),
+      service: String(raw.service),
+      booking_date: String(raw.booking_date),
+      booking_time: String(raw.booking_time),
+      barbershopName: shop?.name ?? "Studio Elegance",
+      barbershopEmail: shop?.email ?? null,
+    },
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -226,9 +244,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const customerName = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
-    const cancelUrl = buildCancelReservationUrl(row.id, row.booking_date, row.booking_time);
+    const cancelUrl = buildCancelReservationUrl(req, row.id, row.booking_date, row.booking_time);
     const resend = new Resend(requireEnv("RESEND_API_KEY"));
-    const from = optionalEnv("RESEND_FROM", "Barbershop Donzi <onboarding@resend.dev>");
+    const from = getResendFrom(req);
 
     const { data: sent, error: sendErr } = await resend.emails.send({
       from,

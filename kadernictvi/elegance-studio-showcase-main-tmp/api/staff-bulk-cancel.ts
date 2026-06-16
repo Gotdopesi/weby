@@ -268,7 +268,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const notifyErrors: string[] = [];
 
     const resendKey = process.env.RESEND_API_KEY?.trim();
-    const resendFrom = process.env.RESEND_FROM?.trim() ?? "Studio Elegance <onboarding@resend.dev>";
+    const resendFrom =
+      process.env.RESEND_FROM_KADERNICTVI?.trim() ||
+      process.env.RESEND_FROM?.trim() ||
+      "Studio Elegance <rezervace@dweby.cz>";
     const resend = resendKey ? new Resend(resendKey) : null;
 
     const bulkgateId = process.env.BULKGATE_APP_ID?.trim();

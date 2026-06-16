@@ -3,8 +3,25 @@
 Nastav v **Vercel → Project `weby` → Settings → Environment Variables**  
 Pro **Production** i **Preview**. U build-time proměnných s prefixem `VITE_` musí být zaškrtnuté i pro build.
 
----
+## Minimum na Vercelu (projekt `weby`)
 
+Bez těchto proměnných rezervace / e-maily nefungují:
+
+| Proměnná | Popis |
+|----------|--------|
+| `VITE_SUPABASE_URL` | URL Supabase projektu |
+| `VITE_SUPABASE_ANON_KEY` | Anon klíč (klient — rezervace) |
+| `SUPABASE_URL` | Stejné URL (server API) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role (API e-maily) |
+| `RESEND_API_KEY` | Odesílání potvrzovacích e-mailů |
+| `CRON_SECRET` | Cron SMS |
+| `CANCEL_SECRET` | Odkaz zrušení v e-mailu |
+
+**Odesílatel e-mailu (`RESEND_FROM`) nemusíš nastavovat** — pro `kadernictvi.dweby.cz` se použije `Studio Elegance <rezervace@dweby.cz>` z `sites.config.json`. Volitelně: `RESEND_FROM_KADERNICTVI`.
+
+**Názvy tabulek (`showcase_*`) na Vercel nepotřebuješ** — jsou v kódu jako `kadernictvi_*`.
+
+---
 ## Sdílené (všechna kadeřnictví)
 
 | Proměnná | Kde | Popis |
