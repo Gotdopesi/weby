@@ -248,7 +248,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: sendErr.message });
     }
 
-    return res.status(200).json({ ok: true, id: sent?.id });
+    return res.status(200).json({ ok: true, id: sent?.id, cancelUrl });
   } catch (e) {
     console.error("[send-booking-email]", e);
     return res.status(500).json({

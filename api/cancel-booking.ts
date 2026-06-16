@@ -97,19 +97,38 @@ function createSupabaseAdmin() {
   });
 }
 
-async function loadReservation(supabase: ReturnType<typeof createSupabaseAdmin>, id: string) {
+async function loadReservation(
+  supabase: ReturnType<typeof createSupabaseAdmin>,
+  id: string,
+): Promise<{ row: Record<string, unknown> | null; error: string | null }> {
+  const baseSelect =
+    "id, first_name, last_name, service, booking_date, booking_time, status";
+
   const { data, error } = await supabase
     .from(REZERVACE_TABLE)
-    .select(`id, first_name, last_name, service, booking_date, booking_time, status, ${KADERNICTVI_TABLE} ( name )`)
+    .select(`${baseSelect}, kadernictvi ( name )`)
     .eq("id", id)
     .maybeSingle();
 
+  if (!error && data) return { row: data as Record<string, unknown>, error: null };
+
   if (error) {
-    console.error("[cancel-booking] load", error.message);
-    return null;
+    console.warn("[cancel-booking] load with join failed:", error.message);
   }
-  if (!data) return null;
-  return data as Record<string, unknown>;
+
+  const { data: plain, error: plainErr } = await supabase
+    .from(REZERVACE_TABLE)
+    .select(baseSelect)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (plainErr) {
+    console.error("[cancel-booking] load", plainErr.message);
+    return { row: null, error: plainErr.message };
+  }
+  if (!plain) return { row: null, error: null };
+
+  return { row: plain as Record<string, unknown>, error: null };
 }
 
 function cors(res: VercelResponse) {
@@ -137,11 +156,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const supabase = createSupabaseAdmin();
-    const row = await loadReservation(supabase, parsed.id);
+    const loaded = await loadReservation(supabase, parsed.id);
 
-    if (!row) {
-      return res.status(404).json({ error: "Rezervace nenalezena." });
+    if (!loaded.row) {
+      return res.status(404).json({
+        error: loaded.error
+          ? `Rezervaci se nepodařilo načíst: ${loaded.error}`
+          : "Rezervace nenalezena.",
+      });
     }
+
+    const row = loaded.row;
 
     const shop = row[KADERNICTVI_TABLE] as { name: string } | null;
     const bookingDate = String(row.booking_date);
