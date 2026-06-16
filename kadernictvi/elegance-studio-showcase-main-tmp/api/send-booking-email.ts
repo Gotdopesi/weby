@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createHmac } from "node:crypto";
 import { Resend } from "resend";
 
-const REZERVACE_TABLES = ["showcase_rezervace", "rezervace"] as const;
+const REZERVACE_TABLES = ["kadernictvi_rezervace", "rezervace"] as const;
 
 /** Inline — Vercel serverless nenačítá api/lib/ jako samostatný modul. */
 function getPublicSiteUrl(): string {
@@ -161,14 +161,14 @@ async function loadReservation(
   reservationId: string,
 ): Promise<{ row: ReservationRow | null; error?: string }> {
   for (const table of REZERVACE_TABLES) {
-    const embed = table.startsWith("showcase_")
-      ? "showcase_barbershops ( name, email )"
+    const embed = table.startsWith("kadernictvi")
+      ? "kadernictvi ( name, email )"
       : "barbershops ( name, email )";
 
     const { data, error } = await supabase
       .from(table)
       .select(
-        `id, first_name, last_name, email, phone, service, booking_date, booking_time, barbershop_id, ${embed}`,
+        `id, first_name, last_name, email, phone, service, booking_date, booking_time, kadernictvi_id, ${embed}`,
       )
       .eq("id", reservationId)
       .single();
@@ -176,7 +176,7 @@ async function loadReservation(
     if (error) continue;
 
     const raw = data as Record<string, unknown>;
-    const shopKey = table.startsWith("showcase_") ? "showcase_barbershops" : "barbershops";
+    const shopKey = table.startsWith("kadernictvi") ? "kadernictvi" : "barbershops";
     const shop = raw[shopKey] as { name: string; email: string | null } | null;
 
     return {

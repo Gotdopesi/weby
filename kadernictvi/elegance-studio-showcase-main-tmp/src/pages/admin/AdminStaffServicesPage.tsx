@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, LogOut, Plus, RefreshCw, Save, Scissors } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import {
   fetchServicesForStaff,
   linkServiceToStaff,
@@ -76,9 +76,9 @@ export default function AdminStaffServicesPage() {
 
     if (row.id < 0) {
       const { data, error } = await supabase
-        .from(SHOWCASE_TABLES.services)
+        .from(KADERNICTVI_TABULKY.sluzby)
         .insert({
-          barbershop_id: barbershopId,
+          kadernictvi_id: barbershopId,
           name: row.name.trim(),
           price: row.price,
           duration_minutes: row.duration_minutes,
@@ -108,7 +108,7 @@ export default function AdminStaffServicesPage() {
     }
 
     const { error } = await supabase
-      .from(SHOWCASE_TABLES.services)
+      .from(KADERNICTVI_TABULKY.sluzby)
       .update({
         name: row.name.trim(),
         price: row.price,
@@ -116,7 +116,7 @@ export default function AdminStaffServicesPage() {
         is_active: row.is_active,
       })
       .eq("id", row.id)
-      .eq("barbershop_id", barbershopId);
+      .eq("kadernictvi_id", barbershopId);
     setSavingId(null);
     if (error) {
       toast.error("Uložení se nezdařilo.", { description: error.message });
@@ -196,7 +196,7 @@ export default function AdminStaffServicesPage() {
       ) : rows.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
           Zatím nemáte přiřazené služby. Přidejte první nebo spusťte{" "}
-          <code className="text-xs bg-muted px-1 rounded">showcase_staff_services.sql</code>.
+          <code className="text-xs bg-muted px-1 rounded">kadernictvi_pracovnik_sluzby.sql</code>.
         </p>
       ) : (
         <div className="space-y-4 max-w-3xl">

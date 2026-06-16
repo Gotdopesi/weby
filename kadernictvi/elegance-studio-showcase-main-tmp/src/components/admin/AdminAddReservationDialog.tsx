@@ -115,7 +115,7 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
     const { first_name, last_name } = splitFullName(name);
     setSaving(true);
     const { error } = await supabase.from(REZERVACE_TABLE).insert({
-      barbershop_id: barbershopId,
+      kadernictvi_id: barbershopId,
       service_id: svc.id,
       service: svc.name,
       total_price: svc.price,
@@ -128,7 +128,7 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
       booking_time: bookingTime,
       status: "confirmed",
       sms_sent: false,
-      staff_id: isStaff && staffId ? staffId : null,
+      pracovnik_id: isStaff && staffId ? staffId : null,
     });
     setSaving(false);
     if (error) {

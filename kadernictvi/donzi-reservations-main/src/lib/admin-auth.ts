@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 
 export type AdminBarbershopCheck =
   | { ok: true; barbershopId: number }
@@ -11,8 +11,8 @@ export async function checkAdminBarbershopAccess(
   userId: string,
 ): Promise<AdminBarbershopCheck> {
   const { data: link, error } = await supabase
-    .from(SHOWCASE_TABLES.barbershopAdmins)
-    .select("barbershop_id")
+    .from(KADERNICTVI_TABULKY.admini)
+    .select("kadernictvi_id")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -21,12 +21,12 @@ export async function checkAdminBarbershopAccess(
     return { ok: false, reason: "no_link" };
   }
 
-  if (!link?.barbershop_id) {
+  if (!link?.kadernictvi_id) {
     return { ok: false, reason: "no_link" };
   }
 
-  const linkedId = Number(link.barbershop_id);
-  if (linkedId !== DEFAULT_BARBERSHOP_ID) {
+  const linkedId = Number(link.kadernictvi_id);
+  if (linkedId !== DEFAULT_KADERNICTVI_ID) {
     return { ok: false, reason: "wrong_shop", linkedBarbershopId: linkedId };
   }
 

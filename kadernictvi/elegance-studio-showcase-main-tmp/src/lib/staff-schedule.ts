@@ -26,8 +26,12 @@ export function parseStaffWorkSchedule(raw: unknown): StaffWeeklySchedule | null
 
 export function hoursForStaffOnDay(day: Date, schedule: StaffWeeklySchedule | null): StaffDayHours {
   const dow = day.getDay();
-  if (schedule && Object.prototype.hasOwnProperty.call(schedule, dow)) {
-    return schedule[dow] ?? null;
+  if (schedule) {
+    if (Object.prototype.hasOwnProperty.call(schedule, dow)) {
+      return schedule[dow] ?? null;
+    }
+    // Má vlastní rozvrh, ale tento den v něm není → nepracuje
+    return null;
   }
   return getOpeningHoursForDay(day);
 }

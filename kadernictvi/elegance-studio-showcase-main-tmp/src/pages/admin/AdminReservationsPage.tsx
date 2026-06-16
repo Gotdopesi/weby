@@ -33,12 +33,12 @@ export default function AdminReservationsPage() {
       let query = supabase
         .from(REZERVACE_TABLE)
         .select("*")
-        .eq("barbershop_id", barbershopId)
+        .eq("kadernictvi_id", barbershopId)
         .order("booking_date", { ascending: true })
         .order("booking_time", { ascending: true });
 
       if (isStaff && staffId) {
-        query = query.eq("staff_id", staffId);
+        query = query.eq("pracovnik_id", staffId);
       }
 
       const { data, error } = await withTimeout(query, LIST_BOOT_MS, "Načítání rezervací");

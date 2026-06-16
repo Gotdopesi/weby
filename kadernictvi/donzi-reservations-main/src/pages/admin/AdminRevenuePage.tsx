@@ -10,7 +10,7 @@ import {
   minRevenueMonth,
   showPlannedColumn,
 } from "@/lib/admin-revenue-display";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { formatCurrency } from "@/lib/trzby-metrics";
 import { useAdminBarbershop } from "@/lib/use-admin-barbershop";
 import { useAdminSession } from "@/lib/use-admin-session";
@@ -46,9 +46,9 @@ export default function AdminRevenuePage() {
     try {
       const { data, error } = await withTimeout(
         supabase
-          .from(SHOWCASE_TABLES.vydelky)
+          .from(KADERNICTVI_TABULKY.vydelky)
           .select("month_key, earned, planned, total")
-          .eq("barbershop_id", barbershopId)
+          .eq("kadernictvi_id", barbershopId)
           .order("month_key", { ascending: false }),
         LIST_BOOT_MS,
         "Načítání tržeb",

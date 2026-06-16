@@ -1,5 +1,5 @@
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
 import {
   BOOKING_SLOT_STEP_MINUTES,
   getOpeningHoursForDay,
@@ -91,7 +91,7 @@ function isSameDayPastSlot(day: Date, slot: string, now: Date): boolean {
 
 export async function fetchBookedIntervalsForDate(
   bookingDate: string,
-  barbershopId = DEFAULT_BARBERSHOP_ID,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
 ): Promise<BookedInterval[]> {
   if (!isSupabaseConfigured()) return [];
 
@@ -99,7 +99,7 @@ export async function fetchBookedIntervalsForDate(
     .from(REZERVACE_TABLE)
     .select("booking_time, duration_minutes")
     .eq("booking_date", bookingDate)
-    .eq("barbershop_id", barbershopId)
+    .eq("kadernictvi_id", barbershopId)
     .neq("status", "canceled");
 
   if (error) {

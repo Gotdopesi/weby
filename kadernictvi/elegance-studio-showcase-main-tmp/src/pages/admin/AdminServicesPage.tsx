@@ -3,7 +3,7 @@ import { format, startOfMonth } from "date-fns";
 import { cs } from "date-fns/locale";
 import { Loader2, LogOut, RefreshCw, Scissors, Star, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { useAdminBarbershop } from "@/lib/use-admin-barbershop";
 import { useAdminSession } from "@/lib/use-admin-session";
 import { AdminNav } from "@/components/admin/AdminNav";
@@ -45,11 +45,11 @@ export default function AdminServicesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from(SHOWCASE_TABLES.vydelkySluzby)
+      .from(KADERNICTVI_TABULKY.vydelkySluzby)
       .select(
         "service_id, service_name, price, count_earned, count_planned, count_total, amount_earned, amount_planned, amount_total",
       )
-      .eq("barbershop_id", barbershopId)
+      .eq("kadernictvi_id", barbershopId)
       .eq("month_key", monthKey)
       .order("count_total", { ascending: false });
 

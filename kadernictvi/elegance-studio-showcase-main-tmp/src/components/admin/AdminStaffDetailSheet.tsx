@@ -84,7 +84,7 @@ export function AdminStaffDetailSheet({
   const recentRows = useMemo(() => {
     if (!row || row.staffId === 0) return [];
     return reservationsInScope(reservations, period, periodAnchor)
-      .filter((r) => r.staff_id === row.staffId)
+      .filter((r) => r.pracovnik_id === row.staffId)
       .sort((a, b) => `${b.booking_date}${b.booking_time}`.localeCompare(`${a.booking_date}${a.booking_time}`))
       .slice(0, 15);
   }, [row, reservations, period, periodAnchor]);

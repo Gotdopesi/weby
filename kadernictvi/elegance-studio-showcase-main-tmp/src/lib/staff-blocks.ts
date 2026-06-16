@@ -1,14 +1,15 @@
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { blockRangeForDate } from "@/lib/staff-block-hours";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
 import type { BookedInterval } from "@/lib/booking-slots";
 import { timeToMinutes } from "@/lib/booking-slots";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import type { Reservation } from "@/lib/reservations-by-day";
 
 export type StaffBlock = {
   id: number;
+  pracovnik_id: number;
   block_date: string;
   start_minutes: number;
   end_minutes: number;
@@ -28,19 +29,19 @@ export function blockToBookedInterval(block: Pick<StaffBlock, "start_minutes" | 
 
 export async function fetchStaffBlocksForDate(
   blockDate: string,
-  barbershopId = DEFAULT_BARBERSHOP_ID,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
   staffId?: number | null,
 ): Promise<StaffBlock[]> {
   if (!isSupabaseConfigured()) return [];
 
   let query = supabase
-    .from(SHOWCASE_TABLES.staffBlocks)
-    .select("id, block_date, start_minutes, end_minutes, note")
-    .eq("barbershop_id", barbershopId)
+    .from(KADERNICTVI_TABULKY.pracovnikBlokace)
+    .select("id, pracovnik_id, block_date, start_minutes, end_minutes, note")
+    .eq("kadernictvi_id", barbershopId)
     .eq("block_date", blockDate);
 
   if (staffId != null && staffId > 0) {
-    query = query.eq("staff_id", staffId);
+    query = query.eq("pracovnik_id", staffId);
   }
 
   const { data, error } = await query.order("start_minutes");
@@ -54,16 +55,16 @@ export async function fetchStaffBlocksForDate(
 
 export async function fetchStaffBlocks(
   staffId: number,
-  barbershopId = DEFAULT_BARBERSHOP_ID,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
   fromDate?: string,
 ): Promise<StaffBlock[]> {
   if (!isSupabaseConfigured()) return [];
 
   let query = supabase
-    .from(SHOWCASE_TABLES.staffBlocks)
-    .select("id, block_date, start_minutes, end_minutes, note")
-    .eq("barbershop_id", barbershopId)
-    .eq("staff_id", staffId)
+    .from(KADERNICTVI_TABULKY.pracovnikBlokace)
+    .select("id, pracovnik_id, block_date, start_minutes, end_minutes, note")
+    .eq("kadernictvi_id", barbershopId)
+    .eq("pracovnik_id", staffId)
     .order("block_date", { ascending: true })
     .order("start_minutes", { ascending: true });
 
@@ -81,7 +82,7 @@ export async function fetchStaffBlocks(
 }
 
 export async function unblockStaffSlot(blockId: number): Promise<void> {
-  const { error } = await supabase.from(SHOWCASE_TABLES.staffBlocks).delete().eq("id", blockId);
+  const { error } = await supabase.from(KADERNICTVI_TABULKY.pracovnikBlokace).delete().eq("id", blockId);
   if (error) throw error;
 }
 
@@ -112,8 +113,8 @@ export async function cancelReservationsAndBlock(params: {
   const { data: rezData, error: rezErr } = await supabase
     .from(REZERVACE_TABLE)
     .select("id, booking_date, booking_time, status, duration_minutes")
-    .eq("barbershop_id", barbershopId)
-    .eq("staff_id", staffId)
+    .eq("kadernictvi_id", barbershopId)
+    .eq("pracovnik_id", staffId)
     .eq("booking_date", blockDate)
     .neq("status", "canceled");
 
@@ -137,10 +138,10 @@ export async function cancelReservationsAndBlock(params: {
   }
 
   const { data: blockRow, error: blockErr } = await supabase
-    .from(SHOWCASE_TABLES.staffBlocks)
+    .from(KADERNICTVI_TABULKY.pracovnikBlokace)
     .insert({
-      barbershop_id: barbershopId,
-      staff_id: staffId,
+      kadernictvi_id: barbershopId,
+      pracovnik_id: staffId,
       block_date: blockDate,
       start_minutes: startMinutes,
       end_minutes: endMinutes,

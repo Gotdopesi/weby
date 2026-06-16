@@ -1,4 +1,4 @@
----
+﻿---
 description: Postup při zakládání nového barbershop webu ve složce kadernictvi
 alwaysApply: true
 ---
@@ -9,13 +9,13 @@ Když uživatel přidá novou složku nebo požádá o nový salon:
 
 ## Šablona
 - Kopíruj backend a strukturu z `donzi-reservations-main` (Vite, api/, supabase/, admin, BookingDialog).
-- Stejná Supabase DB (`hnkcjrvqbeojegujuuyw`) — nový záznam v `showcase_barbershops`, nové `VITE_BARBERSHOP_ID`.
-- Neměň sdílené tabulky — jen `barbershop_id`, služby, branding.
+- Stejná Supabase DB (`hnkcjrvqbeojegujuuyw`) — nový záznam v `kadernictvi`, nové `VITE_KADERNICTVI_ID`.
+- Neměň sdílené tabulky — jen `kadernictvi_id`, služby, branding.
 
 ## Co udělat vždy
 1. Nový web: vlastní vzhled (barvy, logo, hero, tým, galerie, texty, kontakt).
-2. `src/lib/reservation-data.ts` + SQL seed služeb pro nový `barbershop_id`.
-3. `.env` / `.env.example`: `VITE_BARBERSHOP_ID`, Supabase URL/klíče z existujících projektů.
+2. `src/lib/reservation-data.ts` + SQL seed služeb pro nový `kadernictvi_id`.
+3. `.env` / `.env.example`: `VITE_KADERNICTVI_ID`, Supabase URL/klíče z existujících projektů.
 4. `.env.local`: zkopírovat serverové klíče z `elegance-studio-showcase-main/.env.local` (Resend, BulkGate, SERVICE_ROLE).
 5. Supabase SQL přes CLI: `npx supabase db query --linked -f ...` (barbershop, služby, admin propojení, RLS už běží).
 6. Git: nový repo `gh repo create`, commit, push na `main`.
@@ -25,7 +25,7 @@ Když uživatel přidá novou složku nebo požádá o nový salon:
 - Název salonu, slug (např. `muj-salon-mesto`), město/adresa/otevírací doba
 - Ceník služeb (název, cena Kč, délka min)
 - GitHub název repa (např. `Gotdopesi/nazev-salonu`)
-- Admin e-mail pro `showcase_barbershop_admins`
+- Admin e-mail pro `kadernictvi_admini`
 - Design: logo, fotky, barvy nebo odkaz na inspiraci
 
 ## Přístup

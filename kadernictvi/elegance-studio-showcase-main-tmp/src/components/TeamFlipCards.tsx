@@ -167,7 +167,7 @@ export function TeamFlipCards({ onBookStaff }: TeamFlipCardsProps) {
         ) : staff.length === 0 ? (
           <p className="text-center text-muted-foreground py-12 text-sm max-w-md mx-auto">
             Tým zatím není v databázi. Spusť v Supabase SQL soubor{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">showcase_staff.sql</code>.
+            <code className="text-xs bg-muted px-1 py-0.5 rounded">kadernictvi_pracovnici.sql</code>.
           </p>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8 lg:gap-6">

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { displayAmounts, showPlannedColumn } from "@/lib/admin-revenue-display";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { formatCurrency } from "@/lib/trzby-metrics";
 import { cn } from "@/lib/utils";
 
@@ -58,17 +58,17 @@ export function AdminRevenueDetailDialog({ open, onOpenChange, barbershopId, mon
     setLoading(true);
     const [sumRes, svcRes] = await Promise.all([
       supabase
-        .from(SHOWCASE_TABLES.vydelky)
+        .from(KADERNICTVI_TABULKY.vydelky)
         .select("month_key, earned, planned, total")
-        .eq("barbershop_id", barbershopId)
+        .eq("kadernictvi_id", barbershopId)
         .eq("month_key", monthKey)
         .maybeSingle(),
       supabase
-        .from(SHOWCASE_TABLES.vydelkySluzby)
+        .from(KADERNICTVI_TABULKY.vydelkySluzby)
         .select(
           "service_name, price, count_earned, count_planned, count_total, amount_earned, amount_planned, amount_total",
         )
-        .eq("barbershop_id", barbershopId)
+        .eq("kadernictvi_id", barbershopId)
         .eq("month_key", monthKey)
         .order("amount_total", { ascending: false }),
     ]);

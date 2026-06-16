@@ -94,9 +94,9 @@ async function ensureUser(email, password) {
 
 async function staffIdByFirstName(shopId, firstName) {
   const { data } = await admin
-    .from("showcase_staff")
+    .from("kadernictvi_pracovnici")
     .select("id")
-    .eq("barbershop_id", shopId)
+    .eq("kadernictvi_id", shopId)
     .eq("first_name", firstName)
     .eq("is_active", true)
     .maybeSingle();
@@ -105,14 +105,14 @@ async function staffIdByFirstName(shopId, firstName) {
 
 async function linkAdmin(shopId, userId, { role, loginLabel, staffId }) {
   const row = {
-    barbershop_id: shopId,
+    kadernictvi_id: shopId,
     user_id: userId,
     login_label: loginLabel,
     role,
-    staff_id: role === "staff" ? staffId : null,
+    pracovnik_id: role === "staff" ? staffId : null,
   };
 
-  const { error } = await admin.from("showcase_barbershop_admins").upsert(row, { onConflict: "user_id" });
+  const { error } = await admin.from("kadernictvi_admini").upsert(row, { onConflict: "user_id" });
   if (error) throw error;
   console.log(`✓ Propojeno: ${loginLabel} (${role}${staffId ? ` → staff #${staffId}` : ""})`);
 }
@@ -121,13 +121,13 @@ async function main() {
   console.log("Seed dev admin účtů…\n");
 
   const { data: shop } = await admin
-    .from("showcase_barbershops")
+    .from("kadernictvi")
     .select("id")
     .eq("slug", "studio-elegance")
     .maybeSingle();
 
   if (!shop?.id) {
-    console.error("⚠ showcase_barbershops slug=studio-elegance nenalezen");
+    console.error("⚠ kadernictvi slug=studio-elegance nenalezen");
     process.exit(1);
   }
 
@@ -137,7 +137,7 @@ async function main() {
     if (acc.role === "staff" && acc.firstName) {
       staffId = await staffIdByFirstName(shop.id, acc.firstName);
       if (!staffId) {
-        console.warn(`⚠ ${acc.firstName} není v showcase_staff — spusť studio_elegance_team.sql`);
+        console.warn(`⚠ ${acc.firstName} není v kadernictvi_pracovnici — spusť studio_elegance_team.sql`);
       }
     }
     await linkAdmin(shop.id, userId, {

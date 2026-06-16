@@ -39,7 +39,7 @@ export function buildStaffPersonalOverview(
 ): StaffPersonalOverview {
   const todayKey = now.toISOString().slice(0, 10);
   const scoped = reservationsInScope(reservations, period, anchor).filter(
-    (r) => (r as Reservation & { staff_id?: number | null }).staff_id === staffId,
+    (r) => (r as Reservation & { pracovnik_id?: number | null }).pracovnik_id === staffId,
   );
 
   let earned = 0;

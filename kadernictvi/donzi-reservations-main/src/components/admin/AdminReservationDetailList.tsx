@@ -5,7 +5,7 @@ import { CalendarClock, Clock, Mail, Phone, Sparkles, Trash2, User, XCircle } fr
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import {
   buildCustomerInsights,
   type CustomerInsight,
@@ -40,15 +40,15 @@ export function AdminReservationDetailList({ rows, barbershopId, readOnly, onDel
     void (async () => {
       const [custRes, rezRes] = await Promise.all([
         supabase
-          .from(SHOWCASE_TABLES.zakaznici)
+          .from(KADERNICTVI_TABULKY.zakaznici)
           .select("id, email, first_name, last_name, note")
-          .eq("barbershop_id", barbershopId)
+          .eq("kadernictvi_id", barbershopId)
           .eq("email", emailKey)
           .maybeSingle(),
         supabase
           .from(REZERVACE_TABLE)
           .select("*")
-          .eq("barbershop_id", barbershopId)
+          .eq("kadernictvi_id", barbershopId)
           .ilike("email", emailKey),
       ]);
 

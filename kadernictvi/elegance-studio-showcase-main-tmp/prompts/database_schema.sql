@@ -1,4 +1,4 @@
--- =============================================================================
+﻿-- =============================================================================
 -- Studio Elegance — schéma pro Supabase SQL Editor
 -- Aplikace používá tabulku public.rezervace (= rezervace / reservations).
 -- Spusť celý skript najednou (nebo po sekcích).
@@ -7,12 +7,12 @@
 -- 1) Služby salónu
 CREATE TABLE IF NOT EXISTS public.services (
   id BIGSERIAL PRIMARY KEY,
-  barbershop_id BIGINT NOT NULL REFERENCES public.barbershops (id) ON DELETE CASCADE,
+  kadernictvi_id BIGINT NOT NULL REFERENCES public.barbershops (id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
   duration_minutes INT NOT NULL DEFAULT 60 CHECK (duration_minutes > 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (barbershop_id, name)
+  UNIQUE (kadernictvi_id, name)
 );
 
 -- 2) Rozšíření rezervací (v aplikaci: public.rezervace)
@@ -30,7 +30,7 @@ UPDATE public.rezervace SET status = 'confirmed' WHERE status IS NULL OR status 
 CREATE OR REPLACE VIEW public.reservations AS
 SELECT
   id,
-  barbershop_id,
+  kadernictvi_id,
   service_id,
   first_name,
   last_name,
@@ -45,8 +45,8 @@ SELECT
   created_at
 FROM public.rezervace;
 
--- Výchozí služby pro Studio Elegance (barbershop_id = 1)
-INSERT INTO public.services (barbershop_id, name, price, duration_minutes)
+-- Výchozí služby pro Studio Elegance (kadernictvi_id = 1)
+INSERT INTO public.services (kadernictvi_id, name, price, duration_minutes)
 SELECT 1, v.name, v.price, v.duration_minutes
 FROM (
   VALUES
@@ -58,7 +58,7 @@ FROM (
     ('Společenský účes', 1290::numeric, 90)
 ) AS v(name, price, duration_minutes)
 WHERE EXISTS (SELECT 1 FROM public.barbershops WHERE id = 1)
-ON CONFLICT (barbershop_id, name) DO NOTHING;
+ON CONFLICT (kadernictvi_id, name) DO NOTHING;
 
 -- Doplň total_price u starých řádků podle služby (shoda podle textu service)
 UPDATE public.rezervace r
@@ -66,28 +66,28 @@ SET total_price = s.price
 FROM public.services s
 WHERE r.service_id IS NULL
   AND r.total_price IS NULL
-  AND r.barbershop_id = s.barbershop_id
+  AND r.kadernictvi_id = s.kadernictvi_id
   AND r.service = s.name;
 
 -- 3) Předgenerované sloty (90 dní dopředu) — samostatná tabulka, ne zákaznické rezervace
 CREATE TABLE IF NOT EXISTS public.booking_slots (
   id BIGSERIAL PRIMARY KEY,
-  barbershop_id BIGINT NOT NULL REFERENCES public.barbershops (id) ON DELETE CASCADE,
+  kadernictvi_id BIGINT NOT NULL REFERENCES public.barbershops (id) ON DELETE CASCADE,
   slot_date DATE NOT NULL,
   slot_time TEXT NOT NULL,
   is_available BOOLEAN NOT NULL DEFAULT TRUE,
   rezervace_id UUID REFERENCES public.rezervace (id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (barbershop_id, slot_date, slot_time)
+  UNIQUE (kadernictvi_id, slot_date, slot_time)
 );
 
-CREATE INDEX IF NOT EXISTS booking_slots_date_idx ON public.booking_slots (barbershop_id, slot_date);
+CREATE INDEX IF NOT EXISTS booking_slots_date_idx ON public.booking_slots (kadernictvi_id, slot_date);
 
 -- Časy salónu (shodné s aplikací src/lib/booking-slots.ts)
 -- Neděle se negenerují (den v týdnu 0 = neděle v PostgreSQL extract(dow))
 
 CREATE OR REPLACE FUNCTION public.generate_booking_slots(
-  p_barbershop_id BIGINT,
+  p_kadernictvi_id BIGINT,
   p_days INT DEFAULT 90
 )
 RETURNS INT
@@ -108,9 +108,9 @@ BEGIN
   LOOP
     FOREACH v_time IN ARRAY v_times
     LOOP
-      INSERT INTO public.booking_slots (barbershop_id, slot_date, slot_time, is_available)
-      VALUES (p_barbershop_id, v_day, v_time, TRUE)
-      ON CONFLICT (barbershop_id, slot_date, slot_time) DO NOTHING;
+      INSERT INTO public.booking_slots (kadernictvi_id, slot_date, slot_time, is_available)
+      VALUES (p_kadernictvi_id, v_day, v_time, TRUE)
+      ON CONFLICT (kadernictvi_id, slot_date, slot_time) DO NOTHING;
       IF FOUND THEN
         v_inserted := v_inserted + 1;
       END IF;
@@ -153,7 +153,7 @@ AS $$
 BEGIN
   UPDATE public.booking_slots
   SET is_available = FALSE, rezervace_id = NEW.id
-  WHERE barbershop_id = NEW.barbershop_id
+  WHERE kadernictvi_id = NEW.kadernictvi_id
     AND slot_date = NEW.booking_date
     AND slot_time = NEW.booking_time;
   RETURN NEW;

@@ -159,7 +159,7 @@ export function AdminStaffPerformanceSection({
         </h2>
         <p className="text-sm text-muted-foreground">
           Zatím nemáte načtený tým — spusťte v Supabase{" "}
-          <code className="text-xs bg-muted px-1 rounded">showcase_staff.sql</code>.
+          <code className="text-xs bg-muted px-1 rounded">kadernictvi_pracovnici.sql</code>.
         </p>
       </section>
     );

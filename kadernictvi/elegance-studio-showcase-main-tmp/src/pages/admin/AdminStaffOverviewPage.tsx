@@ -38,7 +38,7 @@ import { useAdminBarbershop } from "@/lib/use-admin-barbershop";
 import { useAdminSession } from "@/lib/use-admin-session";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { AdminPeriodToggle } from "@/components/admin/AdminPeriodToggle";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -70,14 +70,14 @@ export default function AdminStaffOverviewPage() {
         supabase
           .from(REZERVACE_TABLE)
           .select(
-            "id, booking_date, booking_time, status, sms_sent, email, phone, first_name, last_name, service, total_price, service_id, staff_id, duration_minutes",
+            "id, booking_date, booking_time, status, sms_sent, email, phone, first_name, last_name, service, total_price, service_id, pracovnik_id, duration_minutes",
           )
-          .eq("barbershop_id", barbershopId)
-          .eq("staff_id", staffId),
+          .eq("kadernictvi_id", barbershopId)
+          .eq("pracovnik_id", staffId),
         supabase
-          .from(SHOWCASE_TABLES.services)
+          .from(KADERNICTVI_TABULKY.sluzby)
           .select("id, name, price")
-          .eq("barbershop_id", barbershopId)
+          .eq("kadernictvi_id", barbershopId)
           .eq("is_active", true),
       ]);
       if (!rez.error) setReservations((rez.data ?? []) as Reservation[]);
@@ -115,7 +115,7 @@ export default function AdminStaffOverviewPage() {
   const scopedRows = useMemo(() => {
     if (!staffId) return [];
     return reservationsInScope(reservations, statsPeriod, periodAnchor)
-      .filter((r) => r.staff_id === staffId)
+      .filter((r) => r.pracovnik_id === staffId)
       .sort((a, b) => `${b.booking_date}${b.booking_time}`.localeCompare(`${a.booking_date}${a.booking_time}`))
       .slice(0, 12);
   }, [staffId, reservations, statsPeriod, periodAnchor]);

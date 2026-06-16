@@ -1,4 +1,4 @@
-# Nový barbershop — playbook
+﻿# Nový barbershop — playbook
 
 Jakmile přidáš novou složku do `kadernictvi` a napíšeš co chceš, agent udělá kompletní web + backend jako u **Studio Elegance** a **Donzi**.
 
@@ -23,7 +23,7 @@ Volitelně: texty (O nás, hero), sociální sítě, mapa.
 2. Předělá **celý frontend** (design, sekce, assety).
 3. Nastaví **služby** v kódu + SQL v Supabase.
 4. Vloží nový salon do DB → dostaneš **`VITE_BARBERSHOP_ID`**.
-5. Propojí admin účet (`showcase_barbershop_admins`).
+5. Propojí admin účet (`kadernictvi_admini`).
 6. Ověří build, pushne na **nový GitHub repo**.
 
 ## Co uděláš ty potom (cca 10 min)

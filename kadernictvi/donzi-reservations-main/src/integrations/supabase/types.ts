@@ -14,7 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      barbershops: {
+      kadernictvi: {
         Row: {
           id: number
           name: string
@@ -46,7 +46,7 @@ export type Database = {
       }
       booking_slots: {
         Row: {
-          barbershop_id: number
+          kadernictvi_id: number
           created_at: string
           id: number
           is_available: boolean
@@ -55,7 +55,7 @@ export type Database = {
           slot_time: string
         }
         Insert: {
-          barbershop_id: number
+          kadernictvi_id: number
           created_at?: string
           id?: number
           is_available?: boolean
@@ -64,7 +64,7 @@ export type Database = {
           slot_time: string
         }
         Update: {
-          barbershop_id?: number
+          kadernictvi_id?: number
           created_at?: string
           id?: number
           is_available?: boolean
@@ -74,9 +74,9 @@ export type Database = {
         }
         Relationships: []
       }
-      services: {
+      kadernictvi_sluzby: {
         Row: {
-          barbershop_id: number
+          kadernictvi_id: number
           created_at: string
           duration_minutes: number
           id: number
@@ -84,7 +84,7 @@ export type Database = {
           price: number
         }
         Insert: {
-          barbershop_id: number
+          kadernictvi_id: number
           created_at?: string
           duration_minutes?: number
           id?: number
@@ -92,7 +92,7 @@ export type Database = {
           price: number
         }
         Update: {
-          barbershop_id?: number
+          kadernictvi_id?: number
           created_at?: string
           duration_minutes?: number
           id?: number
@@ -101,9 +101,9 @@ export type Database = {
         }
         Relationships: []
       }
-      rezervace: {
+      kadernictvi_rezervace: {
         Row: {
-          barbershop_id: number | null
+          kadernictvi_id: number | null
           booking_date: string
           booking_time: string
           created_at: string
@@ -119,7 +119,7 @@ export type Database = {
           total_price: number | null
         }
         Insert: {
-          barbershop_id?: number | null
+          kadernictvi_id?: number | null
           booking_date: string
           booking_time: string
           created_at?: string
@@ -135,7 +135,7 @@ export type Database = {
           total_price?: number | null
         }
         Update: {
-          barbershop_id?: number | null
+          kadernictvi_id?: number | null
           booking_date?: string
           booking_time?: string
           created_at?: string
@@ -152,17 +152,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "rezervace_barbershop_id_fkey"
-            columns: ["barbershop_id"]
+            foreignKeyName: "kadernictvi_rezervace_kadernictvi_id_fkey"
+            columns: ["kadernictvi_id"]
             isOneToOne: false
-            referencedRelation: "barbershops"
+            referencedRelation: "kadernictvi"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rezervace_service_id_fkey"
+            foreignKeyName: "kadernictvi_rezervace_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
-            referencedRelation: "services"
+            referencedRelation: "kadernictvi_sluzby"
             referencedColumns: ["id"]
           },
         ]

@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import {
   buildCustomerInsights,
   completedVisitsInPeriod,
@@ -81,11 +81,11 @@ export default function AdminCustomersPage() {
     setLoading(true);
     const [cust, rez] = await Promise.all([
       supabase
-        .from(SHOWCASE_TABLES.zakaznici)
+        .from(KADERNICTVI_TABULKY.zakaznici)
         .select("id, email, first_name, last_name, note")
-        .eq("barbershop_id", barbershopId)
+        .eq("kadernictvi_id", barbershopId)
         .order("last_name"),
-      supabase.from(REZERVACE_TABLE).select("*").eq("barbershop_id", barbershopId),
+      supabase.from(REZERVACE_TABLE).select("*").eq("kadernictvi_id", barbershopId),
     ]);
     setLoading(false);
 
@@ -147,7 +147,7 @@ export default function AdminCustomersPage() {
     setSaving(true);
     const note = noteDraft.trim() || null;
     const { error } = await supabase
-      .from(SHOWCASE_TABLES.zakaznici)
+      .from(KADERNICTVI_TABULKY.zakaznici)
       .update({ note, updated_at: new Date().toISOString() })
       .eq("id", selected.id);
 

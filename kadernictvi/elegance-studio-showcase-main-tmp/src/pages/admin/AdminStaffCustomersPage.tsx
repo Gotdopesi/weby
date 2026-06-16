@@ -66,8 +66,8 @@ export default function AdminStaffCustomersPage() {
     const { data, error } = await supabase
       .from(REZERVACE_TABLE)
       .select("*")
-      .eq("barbershop_id", barbershopId)
-      .eq("staff_id", staffId)
+      .eq("kadernictvi_id", barbershopId)
+      .eq("pracovnik_id", staffId)
       .order("booking_date", { ascending: false });
     setLoading(false);
     if (error) {

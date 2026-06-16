@@ -40,7 +40,7 @@ loadEnvFile(".env.local");
 loadEnvFile("../.env.local");
 
 const files = [
-  "supabase/showcase_schema.sql",
+  "supabase/kadernictvi_schema.sql",
   "supabase/migrations/20260524130000_showcase_v2.sql",
   "supabase/multi_tenant_rls.sql",
   "supabase/donzi_rls_admin_fix.sql",
@@ -81,8 +81,8 @@ async function main() {
   }
 
   const check = await client.query(`
-    SELECT 'showcase_vydelky' AS tbl, COUNT(*)::text AS cnt FROM public.showcase_vydelky
-    UNION ALL SELECT 'showcase_barbershop_admins', COUNT(*)::text FROM public.showcase_barbershop_admins
+    SELECT 'kadernictvi_vydelky' AS tbl, COUNT(*)::text AS cnt FROM public.kadernictvi_vydelky
+    UNION ALL SELECT 'kadernictvi_admini', COUNT(*)::text FROM public.kadernictvi_admini
     UNION ALL SELECT 'portfolio_poptavky', COUNT(*)::text FROM public.portfolio_poptavky;
   `);
   console.log("Kontrola po migraci:");

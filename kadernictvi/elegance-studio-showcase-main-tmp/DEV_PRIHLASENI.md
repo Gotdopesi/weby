@@ -1,4 +1,4 @@
-# Dočasné testovací přihlášení (majitel + kadeřník)
+﻿# Dočasné testovací přihlášení (majitel + kadeřník)
 
 **Nepushuj na Vercel** dokud nemáš hotové reálné účty. Dev tlačítka fungují jen při `npm run dev`.
 
@@ -29,9 +29,9 @@ cd C:\Users\Dominik\Desktop\Weby\kadernictvi\elegance-studio-showcase-main-tmp
 node scripts/seed-dev-admins.mjs
 ```
 
-Skript vytvoří / aktualizuje **4 účty** v Supabase Auth a propojí je v `showcase_barbershop_admins`.
+Skript vytvoří / aktualizuje **4 účty** v Supabase Auth a propojí je v `kadernictvi_admini`.
 
-Předtím měj v DB: `showcase_staff.sql`, `showcase_admin_roles.sql`, pak `studio_elegance_team.sql`.
+Předtím měj v DB: `kadernictvi_pracovnici.sql`, `showcase_admin_roles.sql`, pak `studio_elegance_team.sql`.
 
 ## 3. Přihlášení
 

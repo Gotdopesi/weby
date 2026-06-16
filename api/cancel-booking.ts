@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { getDefaultBarbershopName, getPublicSiteUrl } from "./tenant";
 
 const PRAGUE_TZ = "Europe/Prague";
-const REZERVACE_TABLES = ["showcase_rezervace", "rezervace"] as const;
+const REZERVACE_TABLES = ["kadernictvi_rezervace", "rezervace"] as const;
 const MIN_HOURS_BEFORE = 24;
 
 function cancelSecret(): string {
@@ -115,8 +115,8 @@ function createSupabaseAdmin() {
 
 async function findReservationTable(supabase: ReturnType<typeof createSupabaseAdmin>, id: string) {
   for (const table of REZERVACE_TABLES) {
-    const embed = table.startsWith("showcase_")
-      ? "showcase_barbershops ( name )"
+    const embed = table.startsWith("kadernictvi")
+      ? "kadernictvi ( name )"
       : "barbershops ( name )";
     const { data, error } = await supabase
       .from(table)
@@ -166,7 +166,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const row = found.data;
-    const shopKey = found.table.startsWith("showcase_") ? "showcase_barbershops" : "barbershops";
+    const shopKey = found.table.startsWith("kadernictvi") ? "kadernictvi" : "barbershops";
     const shop = row[shopKey] as { name: string } | null;
     const bookingDate = String(row.booking_date);
     const bookingTime = normalizeBookingTime(String(row.booking_time));

@@ -3,10 +3,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
 const REZERVACE_TABLE =
-  (process.env.SUPABASE_REZERVACE_TABLE ?? process.env.VITE_SUPABASE_REZERVACE_TABLE ?? "showcase_rezervace").trim();
-const STAFF_BLOCKS_TABLE = "showcase_staff_blocks";
+  (process.env.SUPABASE_REZERVACE_TABLE ?? process.env.VITE_SUPABASE_REZERVACE_TABLE ?? "kadernictvi_rezervace").trim();
+const STAFF_BLOCKS_TABLE = "kadernictvi_pracovnik_blokace";
 const SMS_VYUCTOVANI_TABLE =
-  (process.env.SUPABASE_SMS_VYUCTOVANI_TABLE ?? "showcase_sms_vyuctovani").trim();
+  (process.env.SUPABASE_SMS_VYUCTOVANI_TABLE ?? "kadernictvi_sms").trim();
 const DEFAULT_SMS_UNIT_COST = 1;
 const DEFAULT_SMS_BILLING_MULTIPLIER = 1.6;
 
@@ -21,8 +21,8 @@ type RezRow = {
   booking_time: string;
   status: string;
   duration_minutes: number | null;
-  staff_id: number | null;
-  barbershop_id: number;
+  pracovnik_id: number | null;
+  kadernictvi_id: number;
 };
 
 function requireEnv(name: string): string {
@@ -119,26 +119,26 @@ async function assertStaffOrOwner(
   if (userErr || !userData.user) throw new Error("Neplatné přihlášení.");
 
   const { data: admin, error: adminErr } = await supabase
-    .from("showcase_barbershop_admins")
-    .select("barbershop_id, role, staff_id")
+    .from("kadernictvi_admini")
+    .select("kadernictvi_id, role, pracovnik_id")
     .eq("user_id", userData.user.id)
     .maybeSingle();
 
   if (adminErr || !admin) throw new Error("Účet není propojen s adminem salónu.");
 
-  if (Number(admin.barbershop_id) !== barbershopId) {
+  if (Number(admin.kadernictvi_id) !== barbershopId) {
     throw new Error("Nepovolený přístup k tomuto salónu.");
   }
 
-  const isOwner = admin.role === "owner" || (admin.staff_id == null && admin.role !== "staff");
-  const adminStaffId = admin.staff_id != null ? Number(admin.staff_id) : null;
+  const isOwner = admin.role === "owner" || (admin.pracovnik_id == null && admin.role !== "staff");
+  const adminStaffId = admin.pracovnik_id != null ? Number(admin.pracovnik_id) : null;
 
   if (!isOwner && adminStaffId !== staffId) {
     throw new Error("Můžete rušit jen vlastní rezervace.");
   }
 
   const { data: staffRow } = await supabase
-    .from("showcase_staff")
+    .from("kadernictvi_pracovnici")
     .select("first_name, last_name")
     .eq("id", staffId)
     .maybeSingle();
@@ -186,7 +186,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (wholeDay) {
       const { data: staffScheduleRow } = await supabase
-        .from("showcase_staff")
+        .from("kadernictvi_pracovnici")
         .select("work_schedule")
         .eq("id", staffId)
         .single();
@@ -212,7 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const message = messageRaw || defaultMessage;
 
     const { data: shop } = await supabase
-      .from("showcase_barbershops")
+      .from("kadernictvi")
       .select("name, email, credit_balance, sms_unit_cost, sms_billing_multiplier")
       .eq("id", barbershopId)
       .maybeSingle();
@@ -220,10 +220,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: rezData, error: rezErr } = await supabase
       .from(REZERVACE_TABLE)
       .select(
-        "id, email, phone, first_name, last_name, service, booking_date, booking_time, status, duration_minutes, staff_id, barbershop_id",
+        "id, email, phone, first_name, last_name, service, booking_date, booking_time, status, duration_minutes, pracovnik_id, kadernictvi_id",
       )
-      .eq("barbershop_id", barbershopId)
-      .eq("staff_id", staffId)
+      .eq("kadernictvi_id", barbershopId)
+      .eq("pracovnik_id", staffId)
       .eq("booking_date", blockDate)
       .neq("status", "canceled");
 
@@ -250,8 +250,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: blockRow, error: blockErr } = await supabase
       .from(STAFF_BLOCKS_TABLE)
       .insert({
-        barbershop_id: barbershopId,
-        staff_id: staffId,
+        kadernictvi_id: barbershopId,
+        pracovnik_id: staffId,
         block_date: blockDate,
         start_minutes: startMinutes,
         end_minutes: endMinutes,
@@ -331,7 +331,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             if (bgRes.ok) {
               await supabase.from(SMS_VYUCTOVANI_TABLE).insert({
-                barbershop_id: barbershopId,
+                kadernictvi_id: barbershopId,
+                pracovnik_id: r.pracovnik_id,
                 rezervace_id: r.id,
                 phone: r.phone,
                 unit_cost: unitCost,

@@ -20,12 +20,15 @@ import { StylistPicker } from "@/components/StylistPicker";
 import { cn } from "@/lib/utils";
 import {
   type BookedInterval,
-  fetchBookedIntervalsForDate,
+  type BookedIntervalWithStaff,
+  fetchBookedIntervalsWithStaffForDate,
+  fetchStaffBlocksForBooking,
   filterAvailableStartTimes,
+  filterAvailableStartTimesAnyStaff,
   normalizeBookingTime,
 } from "@/lib/booking-slots";
-import { parseStaffWorkSchedule } from "@/lib/staff-schedule";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
+import { hoursForStaffOnDay, parseStaffWorkSchedule } from "@/lib/staff-schedule";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
 import { fetchServicesForBooking } from "@/lib/staff-services";
 import { withTimeout } from "@/lib/promise-timeout";
@@ -37,6 +40,7 @@ import {
   type StaffSelection,
 } from "@/lib/staff";
 import { toast } from "sonner";
+import type { StaffBlock } from "@/lib/staff-blocks";
 
 const SUBMIT_MS = 25_000;
 const FETCH_SLOTS_MS = 15_000;
@@ -105,6 +109,8 @@ export function BookingDialog({
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [bookedIntervals, setBookedIntervals] = useState<BookedInterval[]>([]);
+  const [bookedWithStaff, setBookedWithStaff] = useState<BookedIntervalWithStaff[]>([]);
+  const [staffBlocks, setStaffBlocks] = useState<StaffBlock[]>([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [servicesList, setServicesList] = useState<ServiceOption[]>([]);
 
@@ -124,6 +130,8 @@ export function BookingDialog({
     setLoading(false);
     setConfirmed(false);
     setBookedIntervals([]);
+    setBookedWithStaff([]);
+    setStaffBlocks([]);
     setLoadingTimes(false);
   };
 
@@ -153,7 +161,7 @@ export function BookingDialog({
       );
       return;
     }
-    void fetchServicesForBooking(DEFAULT_BARBERSHOP_ID, resolvedStaffId)
+    void fetchServicesForBooking(DEFAULT_KADERNICTVI_ID, resolvedStaffId)
       .then((list) => {
         if (!list.length) {
           setServicesList(
@@ -235,8 +243,8 @@ export function BookingDialog({
             booking_date: format(date, "yyyy-MM-dd"),
             booking_time: time,
             status: "confirmed",
-            barbershop_id: DEFAULT_BARBERSHOP_ID,
-            staff_id: resolvedStaffId,
+            kadernictvi_id: DEFAULT_KADERNICTVI_ID,
+            pracovnik_id: resolvedStaffId,
             sms_sent: false,
           })
           .select("id")
@@ -294,9 +302,29 @@ export function BookingDialog({
     selectedStaffMember != null
       ? parseStaffWorkSchedule(selectedStaffMember.work_schedule)
       : null;
+  const staffWorksSelectedDay =
+    date && selectedStaffMember != null
+      ? hoursForStaffOnDay(date, staffSchedule) != null
+      : true;
   const availableTimes =
     date && service
-      ? filterAvailableStartTimes(date, serviceDuration, bookedIntervals, new Date(), staffSchedule)
+      ? staffSelection === STAFF_ANY
+        ? filterAvailableStartTimesAnyStaff(
+            date,
+            serviceDuration,
+            staffList,
+            bookedWithStaff,
+            staffBlocks,
+          )
+        : staffWorksSelectedDay
+          ? filterAvailableStartTimes(
+              date,
+              serviceDuration,
+              bookedIntervals,
+              new Date(),
+              staffSchedule,
+            )
+          : []
       : [];
   const staffLabel =
     staffSelection === STAFF_ANY
@@ -312,13 +340,33 @@ export function BookingDialog({
     setLoadingTimes(true);
     void (async () => {
       try {
-        const intervals = await withTimeout(
-          fetchBookedIntervalsForDate(dayKey, DEFAULT_BARBERSHOP_ID, resolvedStaffId),
+        const [reservations, blocks] = await withTimeout(
+          Promise.all([
+            fetchBookedIntervalsWithStaffForDate(dayKey, DEFAULT_KADERNICTVI_ID, resolvedStaffId),
+            fetchStaffBlocksForBooking(dayKey, DEFAULT_KADERNICTVI_ID, resolvedStaffId),
+          ]),
           FETCH_SLOTS_MS,
           "Načítání volných časů",
         );
         if (cancelled) return;
-        setBookedIntervals(intervals);
+
+        setBookedWithStaff(reservations);
+        setStaffBlocks(blocks);
+
+        if (resolvedStaffId != null) {
+          const forStaff = reservations
+            .filter((r) => r.staffId == null || r.staffId === resolvedStaffId)
+            .map(({ startMinutes, durationMinutes }) => ({ startMinutes, durationMinutes }));
+          setBookedIntervals([
+            ...forStaff,
+            ...blocks.filter((b) => b.pracovnik_id === resolvedStaffId).map((b) => ({
+              startMinutes: b.start_minutes,
+              durationMinutes: b.end_minutes - b.start_minutes,
+            })),
+          ]);
+        } else {
+          setBookedIntervals([]);
+        }
       } catch (e) {
         console.error(e);
         if (!cancelled) {
@@ -327,6 +375,8 @@ export function BookingDialog({
             duration: 10_000,
           });
           setBookedIntervals([]);
+          setBookedWithStaff([]);
+          setStaffBlocks([]);
         }
       } finally {
         if (!cancelled) setLoadingTimes(false);
@@ -335,19 +385,28 @@ export function BookingDialog({
     return () => {
       cancelled = true;
     };
-  }, [step, date, resolvedStaffId]);
+  }, [step, date, resolvedStaffId, staffSelection, staffList]);
 
   useEffect(() => {
     if (step !== 3 || !date || !time || !service) return;
-    const stillOk = filterAvailableStartTimes(
-      date,
-      serviceDuration,
-      bookedIntervals,
-      new Date(),
-      staffSchedule,
-    ).includes(normalizeBookingTime(time));
+    const stillOk =
+      staffSelection === STAFF_ANY
+        ? filterAvailableStartTimesAnyStaff(
+            date,
+            serviceDuration,
+            staffList,
+            bookedWithStaff,
+            staffBlocks,
+          ).includes(normalizeBookingTime(time))
+        : filterAvailableStartTimes(
+            date,
+            serviceDuration,
+            bookedIntervals,
+            new Date(),
+            staffSchedule,
+          ).includes(normalizeBookingTime(time));
     if (!stillOk) setTime("");
-  }, [step, date, time, service, serviceDuration, bookedIntervals, staffSchedule]);
+  }, [step, date, time, service, serviceDuration, bookedIntervals, bookedWithStaff, staffBlocks, staffSchedule, staffSelection, staffList]);
 
   const handleOpenChange = (o: boolean) => {
     setOpen(o);
@@ -501,7 +560,18 @@ export function BookingDialog({
                       }}
                       disabled={(d) => {
                         const today = startOfDay(new Date());
-                        return d < today || d > maxBookingDate || d.getDay() === 0;
+                        if (d < today || d > maxBookingDate || d.getDay() === 0) return true;
+                        if (staffSelection !== STAFF_ANY && selectedStaffMember) {
+                          const sched = parseStaffWorkSchedule(selectedStaffMember.work_schedule);
+                          return hoursForStaffOnDay(d, sched) == null;
+                        }
+                        if (staffSelection === STAFF_ANY && staffList.length > 0) {
+                          return !staffList.some((member) => {
+                            const sched = parseStaffWorkSchedule(member.work_schedule);
+                            return hoursForStaffOnDay(d, sched) != null;
+                          });
+                        }
+                        return false;
                       }}
                       locale={cs}
                       initialFocus
@@ -527,9 +597,17 @@ export function BookingDialog({
                       <Loader2 className="h-4 w-4 animate-spin text-gold" />
                       Kontroluji volné termíny…
                     </div>
+                  ) : !service ? (
+                    <p className="text-sm text-muted-foreground">Nejdřív vyberte službu v kroku 1.</p>
+                  ) : staffSelection !== STAFF_ANY && !staffWorksSelectedDay ? (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedStaffMember
+                        ? `${staffDisplayName(selectedStaffMember)} v tento den nepracuje. Zkuste jiný den.`
+                        : "Vybraný kadeřník v tento den nepracuje."}
+                    </p>
                   ) : availableTimes.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      Pro tento den bohužel nemáme volný termín.
+                      Pro tento den bohužel nemáme volný termín. Zkuste jiný den nebo „Je mi to jedno“.
                     </p>
                   ) : (
                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">

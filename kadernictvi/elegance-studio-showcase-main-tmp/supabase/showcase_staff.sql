@@ -1,9 +1,9 @@
--- Kadeřníci / stylisté salónu + vazba na rezervace
+﻿-- Kadeřníci / stylisté salónu + vazba na rezervace
 -- Spusť v Supabase SQL Editor (sdílená DB showcase).
 
-CREATE TABLE IF NOT EXISTS public.showcase_staff (
+CREATE TABLE IF NOT EXISTS public.kadernictvi_pracovnici (
   id BIGSERIAL PRIMARY KEY,
-  barbershop_id BIGINT NOT NULL REFERENCES public.showcase_barbershops (id) ON DELETE CASCADE,
+  kadernictvi_id BIGINT NOT NULL REFERENCES public.kadernictvi (id) ON DELETE CASCADE,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   role_title TEXT NOT NULL,
@@ -16,42 +16,42 @@ CREATE TABLE IF NOT EXISTS public.showcase_staff (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS showcase_staff_shop_active_idx
-  ON public.showcase_staff (barbershop_id, sort_order)
+CREATE INDEX IF NOT EXISTS kadernictvi_pracovnici_shop_active_idx
+  ON public.kadernictvi_pracovnici (kadernictvi_id, sort_order)
   WHERE is_active = TRUE;
 
-COMMENT ON TABLE public.showcase_staff IS
-  'Tým salónu — fotka, role, bio, specializace; multi-tenant přes barbershop_id.';
+COMMENT ON TABLE public.kadernictvi_pracovnici IS
+  'Tým salónu — fotka, role, bio, specializace; multi-tenant přes kadernictvi_id.';
 
-ALTER TABLE public.showcase_rezervace
-  ADD COLUMN IF NOT EXISTS staff_id BIGINT REFERENCES public.showcase_staff (id) ON DELETE SET NULL;
+ALTER TABLE public.kadernictvi_rezervace
+  ADD COLUMN IF NOT EXISTS pracovnik_id BIGINT REFERENCES public.kadernictvi_pracovnici (id) ON DELETE SET NULL;
 
-CREATE INDEX IF NOT EXISTS showcase_rezervace_staff_date_idx
-  ON public.showcase_rezervace (barbershop_id, staff_id, booking_date)
+CREATE INDEX IF NOT EXISTS kadernictvi_rezervace_staff_date_idx
+  ON public.kadernictvi_rezervace (kadernictvi_id, pracovnik_id, booking_date)
   WHERE status <> 'canceled';
 
 -- === RLS ===
-ALTER TABLE public.showcase_staff ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kadernictvi_pracovnici ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "anon_select_active_staff" ON public.showcase_staff;
+DROP POLICY IF EXISTS "anon_select_active_staff" ON public.kadernictvi_pracovnici;
 CREATE POLICY "anon_select_active_staff"
-  ON public.showcase_staff FOR SELECT TO anon
+  ON public.kadernictvi_pracovnici FOR SELECT TO anon
   USING (is_active = TRUE);
 
-DROP POLICY IF EXISTS "authenticated_select_staff" ON public.showcase_staff;
+DROP POLICY IF EXISTS "authenticated_select_staff" ON public.kadernictvi_pracovnici;
 CREATE POLICY "authenticated_select_staff"
-  ON public.showcase_staff FOR SELECT TO authenticated
-  USING (barbershop_id = public.showcase_current_barbershop_id());
+  ON public.kadernictvi_pracovnici FOR SELECT TO authenticated
+  USING (kadernictvi_id = public.kadernictvi_aktualni_id());
 
-DROP POLICY IF EXISTS "authenticated_manage_staff" ON public.showcase_staff;
+DROP POLICY IF EXISTS "authenticated_manage_staff" ON public.kadernictvi_pracovnici;
 CREATE POLICY "authenticated_manage_staff"
-  ON public.showcase_staff FOR ALL TO authenticated
-  USING (barbershop_id = public.showcase_current_barbershop_id())
-  WITH CHECK (barbershop_id = public.showcase_current_barbershop_id());
+  ON public.kadernictvi_pracovnici FOR ALL TO authenticated
+  USING (kadernictvi_id = public.kadernictvi_aktualni_id())
+  WITH CHECK (kadernictvi_id = public.kadernictvi_aktualni_id());
 
--- === Seed: Studio Elegance (barbershop_id = 1) ===
-INSERT INTO public.showcase_staff (
-  barbershop_id, first_name, last_name, role_title, bio, photo_url, specializations, sort_order
+-- === Seed: Studio Elegance (kadernictvi_id = 1) ===
+INSERT INTO public.kadernictvi_pracovnici (
+  kadernictvi_id, first_name, last_name, role_title, bio, photo_url, specializations, sort_order
 )
 SELECT
   b.id,
@@ -62,7 +62,7 @@ SELECT
   v.photo_url,
   v.specializations,
   v.sort_order
-FROM public.showcase_barbershops b
+FROM public.kadernictvi b
 CROSS JOIN (
   VALUES
     (
@@ -95,5 +95,5 @@ CROSS JOIN (
 ) AS v(first_name, last_name, role_title, bio, photo_url, specializations, sort_order)
 WHERE b.slug = 'studio-elegance'
   AND NOT EXISTS (
-    SELECT 1 FROM public.showcase_staff s WHERE s.barbershop_id = b.id
+    SELECT 1 FROM public.kadernictvi_pracovnici s WHERE s.kadernictvi_id = b.id
   );

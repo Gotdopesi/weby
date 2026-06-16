@@ -34,7 +34,7 @@ export default function AdminReservationsPage() {
         supabase
           .from(REZERVACE_TABLE)
           .select("*")
-          .eq("barbershop_id", barbershopId)
+          .eq("kadernictvi_id", barbershopId)
           .order("booking_date", { ascending: true })
           .order("booking_time", { ascending: true }),
         LIST_BOOT_MS,

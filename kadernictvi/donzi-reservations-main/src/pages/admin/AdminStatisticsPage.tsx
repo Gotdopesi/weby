@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { displayAmounts } from "@/lib/admin-revenue-display";
 import {
   aggregateRevenueFromReservations,
@@ -131,23 +131,23 @@ export default function AdminStatisticsPage() {
         statsPeriod === "week"
           ? Promise.resolve({ data: [], error: null })
           : supabase
-              .from(SHOWCASE_TABLES.vydelkySluzby)
+              .from(KADERNICTVI_TABULKY.vydelkySluzby)
               .select("service_id, service_name, price, count_total, amount_total")
-              .eq("barbershop_id", barbershopId)
+              .eq("kadernictvi_id", barbershopId)
               .in("month_key", keys)
               .order("count_total", { ascending: false });
 
       const [vyd, svc, cat, rez] = await Promise.all([
         supabase
-          .from(SHOWCASE_TABLES.vydelky)
+          .from(KADERNICTVI_TABULKY.vydelky)
           .select("month_key, earned, planned, total")
-          .eq("barbershop_id", barbershopId)
+          .eq("kadernictvi_id", barbershopId)
           .order("month_key", { ascending: false }),
         svcQuery,
         supabase
-          .from(SHOWCASE_TABLES.services)
+          .from(KADERNICTVI_TABULKY.sluzby)
           .select("id, name, price, duration_minutes, is_active")
-          .eq("barbershop_id", barbershopId)
+          .eq("kadernictvi_id", barbershopId)
           .eq("is_active", true)
           .order("name"),
         supabase
@@ -155,7 +155,7 @@ export default function AdminStatisticsPage() {
           .select(
             "id, booking_date, booking_time, status, sms_sent, email, service, total_price, service_id",
           )
-          .eq("barbershop_id", barbershopId),
+          .eq("kadernictvi_id", barbershopId),
       ]);
 
       if (vyd.error) toast.error("Tržby se nepodařilo načíst.", { description: vyd.error.message });

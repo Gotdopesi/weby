@@ -93,7 +93,7 @@ export function buildStaffMetrics(
   let unassigned: StaffMetricsRow | null = null;
 
   for (const r of scoped) {
-    const sid = (r as Reservation & { staff_id?: number | null }).staff_id;
+    const sid = (r as Reservation & { pracovnik_id?: number | null }).pracovnik_id;
     const minutes = bookingMinutes(r);
     const amount = reservationRevenue(r, priceOf);
     const isCanceled = r.status === "canceled";

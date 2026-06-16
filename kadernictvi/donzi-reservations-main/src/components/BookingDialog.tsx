@@ -21,7 +21,7 @@ import {
   filterAvailableStartTimes,
   normalizeBookingTime,
 } from "@/lib/booking-slots";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
 import { FALLBACK_BOOKING_SERVICES } from "@/lib/reservation-data";
 import {
@@ -31,7 +31,7 @@ import {
   type BookingServiceCategory,
 } from "@/lib/service-categories";
 import type { ServiceCategory } from "@/lib/reservation-data";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { withTimeout } from "@/lib/promise-timeout";
 import { toast } from "sonner";
 import { ReservationSummaryTable } from "@/components/ReservationSummaryTable";
@@ -128,9 +128,9 @@ export function BookingDialog({ trigger, open: controlledOpen, onOpenChange, pre
       return;
     }
     void supabase
-      .from(SHOWCASE_TABLES.services)
+      .from(KADERNICTVI_TABULKY.sluzby)
       .select("id, name, price, duration_minutes")
-      .eq("barbershop_id", DEFAULT_BARBERSHOP_ID)
+      .eq("kadernictvi_id", DEFAULT_KADERNICTVI_ID)
       .eq("is_active", true)
       .order("name")
       .then(({ data, error }) => {
@@ -214,7 +214,7 @@ export function BookingDialog({ trigger, open: controlledOpen, onOpenChange, pre
             booking_date: format(date, "yyyy-MM-dd"),
             booking_time: time,
             status: "confirmed",
-            barbershop_id: DEFAULT_BARBERSHOP_ID,
+            kadernictvi_id: DEFAULT_KADERNICTVI_ID,
             sms_sent: false,
             note: parsed.data.note?.trim() || null,
           })

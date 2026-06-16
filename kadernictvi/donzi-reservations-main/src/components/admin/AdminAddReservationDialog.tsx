@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminBarbershop } from "@/lib/use-admin-barbershop";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import {
   type BookedInterval,
   fetchBookedIntervalsForDate,
@@ -68,9 +68,9 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
   useEffect(() => {
     if (!open) return;
     void supabase
-      .from(SHOWCASE_TABLES.services)
+      .from(KADERNICTVI_TABULKY.sluzby)
       .select("id, name, price, duration_minutes")
-      .eq("barbershop_id", barbershopId)
+      .eq("kadernictvi_id", barbershopId)
       .eq("is_active", true)
       .order("name")
       .then(({ data }) => {
@@ -113,7 +113,7 @@ export function AdminAddReservationDialog({ open, onOpenChange, onCreated }: Pro
     const { first_name, last_name } = splitFullName(name);
     setSaving(true);
     const { error } = await supabase.from(REZERVACE_TABLE).insert({
-      barbershop_id: barbershopId,
+      kadernictvi_id: barbershopId,
       service_id: svc.id,
       service: svc.name,
       total_price: svc.price,

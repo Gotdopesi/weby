@@ -4,11 +4,11 @@ import { addHours } from "date-fns";
 
 const PRAGUE_TZ = "Europe/Prague";
 const REZERVACE_TABLE =
-  (process.env.SUPABASE_REZERVACE_TABLE ?? process.env.VITE_SUPABASE_REZERVACE_TABLE ?? "showcase_rezervace").trim();
+  (process.env.SUPABASE_REZERVACE_TABLE ?? process.env.VITE_SUPABASE_REZERVACE_TABLE ?? "kadernictvi_rezervace").trim();
 const BARBERSHOP_TABLE =
-  (process.env.SUPABASE_BARBERSHOP_TABLE ?? "showcase_barbershops").trim();
+  (process.env.SUPABASE_KADERNICTVI_TABLE ?? "kadernictvi").trim();
 const SMS_VYUCTOVANI_TABLE =
-  (process.env.SUPABASE_SMS_VYUCTOVANI_TABLE ?? "showcase_sms_vyuctovani").trim();
+  (process.env.SUPABASE_SMS_VYUCTOVANI_TABLE ?? "kadernictvi_sms").trim();
 const DEFAULT_SMS_UNIT_COST = 1;
 const DEFAULT_SMS_BILLING_MULTIPLIER = 1.6;
 
@@ -18,7 +18,8 @@ type RezervaceRow = {
   booking_date: string;
   booking_time: string;
   sms_sent: boolean;
-  barbershop_id: number | null;
+  kadernictvi_id: number | null;
+  pracovnik_id: number | null;
   shop: {
     id: number;
     name: string;
@@ -125,19 +126,19 @@ async function loadPendingRows(supabase: SupabaseClient): Promise<{
   const embedLegacy =
     "barbershops ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )";
   const embedShowcase =
-    "showcase_barbershops ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )";
-  const tablesToTry = [...new Set([REZERVACE_TABLE, "showcase_rezervace", "rezervace"])];
+    "kadernictvi ( id, name, credit_balance, sms_price, sms_unit_cost, sms_billing_multiplier )";
+  const tablesToTry = [...new Set([REZERVACE_TABLE, "kadernictvi_rezervace", "rezervace"])];
 
   for (const table of tablesToTry) {
-    const embed = table.startsWith("showcase_") ? embedShowcase : embedLegacy;
+    const embed = table.startsWith("kadernictvi") ? embedShowcase : embedLegacy;
     const { data, error } = await supabase
       .from(table)
-      .select(`id, phone, booking_date, booking_time, sms_sent, barbershop_id, ${embed}`)
+      .select(`id, phone, booking_date, booking_time, sms_sent, kadernictvi_id, pracovnik_id, ${embed}`)
       .eq("sms_sent", false);
 
     if (error) continue;
 
-    const shopKey = table.startsWith("showcase_") ? "showcase_barbershops" : "barbershops";
+    const shopKey = table.startsWith("kadernictvi") ? "kadernictvi" : "barbershops";
     const rows = (data ?? []).map((r) => {
       const raw = r as Record<string, unknown>;
       const shopRaw = raw[shopKey] as RezervaceRow["shop"] | null;
@@ -147,7 +148,8 @@ async function loadPendingRows(supabase: SupabaseClient): Promise<{
         booking_date: String(raw.booking_date),
         booking_time: String(raw.booking_time),
         sms_sent: Boolean(raw.sms_sent),
-        barbershop_id: raw.barbershop_id as number | null,
+        kadernictvi_id: raw.kadernictvi_id as number | null,
+        pracovnik_id: raw.pracovnik_id as number | null,
         shop: shopRaw,
       };
     });
@@ -157,7 +159,7 @@ async function loadPendingRows(supabase: SupabaseClient): Promise<{
 
   return {
     rows: [],
-    error: `Nelze načíst rezervace (zkoušeno: ${tablesToTry.join(", ")}). Spusť showcase_schema.sql nebo nastav SUPABASE_REZERVACE_TABLE.`,
+    error: `Nelze načíst rezervace (zkoušeno: ${tablesToTry.join(", ")}). Spusť kadernictvi_schema.sql nebo nastav SUPABASE_REZERVACE_TABLE.`,
     tableUsed: REZERVACE_TABLE,
   };
 }
@@ -229,7 +231,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const shop = row.shop;
       if (!shop) {
-        log.push(`[skip] ${row.id}: chybí barbershop (barbershop_id=${row.barbershop_id ?? "null"})`);
+        log.push(`[skip] ${row.id}: chybí kadernictvi (kadernictvi_id=${row.kadernictvi_id ?? "null"})`);
         skipped++;
         continue;
       }
@@ -288,7 +290,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const { error: ledgerErr } = await supabase.from(SMS_VYUCTOVANI_TABLE).insert({
-        barbershop_id: shop.id,
+        kadernictvi_id: shop.id,
+        pracovnik_id: row.pracovnik_id,
         rezervace_id: row.id,
         phone: row.phone,
         unit_cost: unitCost,

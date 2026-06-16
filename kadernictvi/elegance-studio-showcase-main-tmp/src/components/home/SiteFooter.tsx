@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -42,8 +42,8 @@ export function SiteFooter({ onReserve, showReserve = true }: Props) {
       return;
     }
     if (isSupabaseConfigured()) {
-      const { error } = await supabase.from(SHOWCASE_TABLES.portfolioPoptavky).insert({
-        barbershop_id: DEFAULT_BARBERSHOP_ID,
+      const { error } = await supabase.from("portfolio_poptavky").insert({
+        kadernictvi_id: DEFAULT_KADERNICTVI_ID,
         name: r.data.name,
         email: r.data.email,
         message: r.data.message,

@@ -24,7 +24,7 @@ import {
   unblockStaffSlot,
   type StaffBlock,
 } from "@/lib/staff-blocks";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import {
   formFieldsToSchedule,
   scheduleToFormFields,
@@ -76,7 +76,7 @@ export default function AdminStaffSettingsPage() {
     try {
       const [staffRes, blocksRes] = await Promise.all([
         supabase
-          .from(SHOWCASE_TABLES.staff)
+          .from(KADERNICTVI_TABULKY.pracovnici)
           .select("work_schedule")
           .eq("id", staffId)
           .single(),
@@ -105,10 +105,10 @@ export default function AdminStaffSettingsPage() {
     setSavingSchedule(true);
     const work_schedule = formFieldsToSchedule(scheduleFields);
     const { error } = await supabase
-      .from(SHOWCASE_TABLES.staff)
+      .from(KADERNICTVI_TABULKY.pracovnici)
       .update({ work_schedule })
       .eq("id", staffId)
-      .eq("barbershop_id", barbershopId);
+      .eq("kadernictvi_id", barbershopId);
     setSavingSchedule(false);
     if (error) {
       toast.error("Rozvrh se nepodařilo uložit.", { description: error.message });
@@ -224,8 +224,8 @@ export default function AdminStaffSettingsPage() {
         <AdminNav />
         <p className="text-center text-muted-foreground py-12 max-w-md mx-auto">
           Váš účet není propojen s profilem kadeřníka. Spusťte v Supabase{" "}
-          <code className="text-xs bg-muted px-1 rounded">showcase_admin_roles.sql</code> a propojte
-          účet se záznamem v <code className="text-xs bg-muted px-1 rounded">showcase_staff</code>.
+          <code className="text-xs bg-muted px-1 rounded">kadernictvi_admini</code> a propojte
+          účet se záznamem v <code className="text-xs bg-muted px-1 rounded">kadernictvi_pracovnici</code>.
         </p>
       </div>
     );

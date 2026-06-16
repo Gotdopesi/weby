@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 
 export const STAFF_ANY = "any" as const;
 export type StaffSelection = typeof STAFF_ANY | number;
@@ -75,16 +75,16 @@ function mapRow(row: Record<string, unknown>): StaffMember {
 }
 
 export async function fetchActiveStaff(
-  barbershopId = DEFAULT_BARBERSHOP_ID,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
 ): Promise<StaffMember[]> {
   if (!isSupabaseConfigured()) return FALLBACK_STAFF;
 
   const { data, error } = await supabase
-    .from(SHOWCASE_TABLES.staff)
+    .from(KADERNICTVI_TABULKY.pracovnici)
     .select(
       "id, first_name, last_name, role_title, bio, photo_url, specializations, sort_order, work_schedule",
     )
-    .eq("barbershop_id", barbershopId)
+    .eq("kadernictvi_id", barbershopId)
     .eq("is_active", true)
     .order("sort_order")
     .order("last_name");
@@ -100,16 +100,16 @@ export async function fetchActiveStaff(
 }
 
 export async function fetchStaffForAdmin(
-  barbershopId = DEFAULT_BARBERSHOP_ID,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
 ): Promise<StaffMember[]> {
   if (!isSupabaseConfigured()) return [];
 
   const { data, error } = await supabase
-    .from(SHOWCASE_TABLES.staff)
+    .from(KADERNICTVI_TABULKY.pracovnici)
     .select(
       "id, first_name, last_name, role_title, bio, photo_url, specializations, sort_order, work_schedule",
     )
-    .eq("barbershop_id", barbershopId)
+    .eq("kadernictvi_id", barbershopId)
     .eq("is_active", true)
     .order("sort_order")
     .order("last_name");

@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
-import { DEFAULT_BARBERSHOP_ID } from "@/lib/barbershop";
-import { SHOWCASE_TABLES } from "@/lib/showcase-tables";
+import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
+import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 
 export type BookingService = {
   id: number;
@@ -28,9 +28,9 @@ function mapServiceRow(row: {
 
 async function serviceIdsForStaff(staffId: number): Promise<number[]> {
   const { data, error } = await supabase
-    .from(SHOWCASE_TABLES.staffServices)
+    .from(KADERNICTVI_TABULKY.pracovnikSluzby)
     .select("service_id")
-    .eq("staff_id", staffId);
+    .eq("pracovnik_id", staffId);
 
   if (error) {
     console.warn("[serviceIdsForStaff]", error.message);
@@ -47,9 +47,9 @@ async function loadServicesByIds(
   if (ids.length === 0) return [];
 
   let query = supabase
-    .from(SHOWCASE_TABLES.services)
+    .from(KADERNICTVI_TABULKY.sluzby)
     .select("id, name, price, duration_minutes, is_active")
-    .eq("barbershop_id", barbershopId)
+    .eq("kadernictvi_id", barbershopId)
     .in("id", ids)
     .order("name");
 
@@ -65,9 +65,9 @@ async function loadAllShopServices(
   activeOnly: boolean,
 ): Promise<BookingService[]> {
   let query = supabase
-    .from(SHOWCASE_TABLES.services)
+    .from(KADERNICTVI_TABULKY.sluzby)
     .select("id, name, price, duration_minutes, is_active")
-    .eq("barbershop_id", barbershopId)
+    .eq("kadernictvi_id", barbershopId)
     .order("name");
 
   if (activeOnly) query = query.eq("is_active", true);
@@ -80,7 +80,7 @@ async function loadAllShopServices(
 /** Služby jednoho kadeřníka (rezervace / admin). */
 export async function fetchServicesForStaff(
   staffId: number,
-  barbershopId = DEFAULT_BARBERSHOP_ID,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
   activeOnly = true,
 ): Promise<BookingService[]> {
   if (!isSupabaseConfigured()) return [];
@@ -94,7 +94,7 @@ export async function fetchServicesForStaff(
 
 /** Veřejná rezervace — podle vybraného kadeřníka, jinak sjednocení služeb celého týmu. */
 export async function fetchServicesForBooking(
-  barbershopId = DEFAULT_BARBERSHOP_ID,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
   staffId?: number | null,
 ): Promise<BookingService[]> {
   if (!isSupabaseConfigured()) return [];
@@ -104,9 +104,9 @@ export async function fetchServicesForBooking(
   }
 
   const { data: staffRows, error: staffErr } = await supabase
-    .from(SHOWCASE_TABLES.staff)
+    .from(KADERNICTVI_TABULKY.pracovnici)
     .select("id")
-    .eq("barbershop_id", barbershopId)
+    .eq("kadernictvi_id", barbershopId)
     .eq("is_active", true);
 
   if (staffErr) throw staffErr;
@@ -117,9 +117,9 @@ export async function fetchServicesForBooking(
   }
 
   const { data: links, error: linkErr } = await supabase
-    .from(SHOWCASE_TABLES.staffServices)
+    .from(KADERNICTVI_TABULKY.pracovnikSluzby)
     .select("service_id")
-    .in("staff_id", staffIds);
+    .in("pracovnik_id", staffIds);
 
   if (linkErr) {
     console.warn("[fetchServicesForBooking]", linkErr.message);
@@ -136,7 +136,7 @@ export async function fetchServicesForBooking(
 
 export async function linkServiceToStaff(staffId: number, serviceId: number): Promise<void> {
   const { error } = await supabase
-    .from(SHOWCASE_TABLES.staffServices)
-    .upsert({ staff_id: staffId, service_id: serviceId }, { onConflict: "staff_id,service_id" });
+    .from(KADERNICTVI_TABULKY.pracovnikSluzby)
+    .upsert({ pracovnik_id: staffId, service_id: serviceId }, { onConflict: "pracovnik_id,service_id" });
   if (error) throw error;
 }

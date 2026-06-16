@@ -1,19 +1,19 @@
--- Monika = jen kadeřník (staff), ne majitel
+﻿-- Monika = jen kadeřník (staff), ne majitel
 -- Spusť v Supabase SQL Editoru po showcase_admin_roles.sql
 
-UPDATE public.showcase_barbershop_admins a
+UPDATE public.kadernictvi_admini a
 SET
   role = 'staff',
-  staff_id = s.id
-FROM public.showcase_barbershops b
-JOIN public.showcase_staff s ON s.barbershop_id = b.id AND s.first_name = 'Monika'
+  pracovnik_id = s.id
+FROM public.kadernictvi b
+JOIN public.kadernictvi_pracovnici s ON s.kadernictvi_id = b.id AND s.first_name = 'Monika'
 JOIN auth.users u ON u.id = a.user_id
-WHERE a.barbershop_id = b.id
+WHERE a.kadernictvi_id = b.id
   AND b.slug = 'studio-elegance'
   AND lower(u.email) = 'dev.monika@studio-elegance.test';
 
 -- Kontrola
--- SELECT u.email, a.role, a.staff_id, s.first_name
--- FROM showcase_barbershop_admins a
+-- SELECT u.email, a.role, a.pracovnik_id, s.first_name
+-- FROM kadernictvi_admini a
 -- JOIN auth.users u ON u.id = a.user_id
--- LEFT JOIN showcase_staff s ON s.id = a.staff_id;
+-- LEFT JOIN kadernictvi_pracovnici s ON s.id = a.pracovnik_id;

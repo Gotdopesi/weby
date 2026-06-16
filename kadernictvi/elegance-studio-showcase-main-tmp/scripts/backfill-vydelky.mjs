@@ -1,5 +1,5 @@
 /**
- * Jednorázový přepočet showcase_vydelky z showcase_trzby (service role).
+ * Jednorázový přepočet kadernictvi_vydelky z kadernictvi_trzby (service role).
  */
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -37,9 +37,9 @@ const BARBERSHOP_ID = Number(process.env.VITE_BARBERSHOP_ID ?? 1);
 const currentMonth = new Date().toISOString().slice(0, 7);
 
 const { data: rows, error } = await supabase
-  .from("showcase_trzby")
-  .select("barbershop_id, booking_date, revenue_kind, amount, service_id, service_name")
-  .eq("barbershop_id", BARBERSHOP_ID);
+  .from("kadernictvi_trzby")
+  .select("kadernictvi_id, booking_date, revenue_kind, amount, service_id, service_name")
+  .eq("kadernictvi_id", BARBERSHOP_ID);
 
 if (error) {
   console.error(error.message);
@@ -86,31 +86,31 @@ for (const [month_key, m] of months) {
   const earned = m.earned;
   const total = earned + planned;
 
-  const { error: upErr } = await supabase.from("showcase_vydelky").upsert(
+  const { error: upErr } = await supabase.from("kadernictvi_vydelky").upsert(
     {
-      barbershop_id: BARBERSHOP_ID,
+      kadernictvi_id: BARBERSHOP_ID,
       month_key,
       earned,
       planned,
       total,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "barbershop_id,month_key" },
+    { onConflict: "kadernictvi_id,month_key" },
   );
   if (upErr) console.error("vydelky", month_key, upErr.message);
   else console.log("vydelky", month_key, { earned, planned, total });
 
   await supabase
-    .from("showcase_vydelky_sluzby")
+    .from("kadernictvi_vydelky_sluzby")
     .delete()
-    .eq("barbershop_id", BARBERSHOP_ID)
+    .eq("kadernictvi_id", BARBERSHOP_ID)
     .eq("month_key", month_key);
 
   const svcRows = [...m.services.values()].map((s) => {
     const plannedAmt = month_key < currentMonth ? 0 : s.planned;
     const earnedAmt = s.earned;
     return {
-      barbershop_id: BARBERSHOP_ID,
+      kadernictvi_id: BARBERSHOP_ID,
       service_id: s.service_id,
       service_name: s.service_name,
       month_key,
@@ -126,7 +126,7 @@ for (const [month_key, m] of months) {
   });
 
   if (svcRows.length) {
-    const { error: svcErr } = await supabase.from("showcase_vydelky_sluzby").insert(svcRows);
+    const { error: svcErr } = await supabase.from("kadernictvi_vydelky_sluzby").insert(svcRows);
     if (svcErr) console.error("sluzby", month_key, svcErr.message);
   }
 }

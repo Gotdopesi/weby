@@ -18,6 +18,7 @@
       "hosts": ["kadernictvi.dweby.cz"],
       "hasApi": true,
       "buildEnv": {
+        "VITE_KADERNICTVI_ID": "1",
         "VITE_BARBERSHOP_ID": "1"
       },
       "siteUrl": "https://kadernictvi.dweby.cz",
@@ -35,6 +36,7 @@
       "hosts": ["donzi.dweby.cz"],
       "hasApi": true,
       "buildEnv": {
+        "VITE_KADERNICTVI_ID": "5",
         "VITE_BARBERSHOP_ID": "5"
       },
       "siteUrl": "https://donzi.dweby.cz",
