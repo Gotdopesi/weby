@@ -12,14 +12,14 @@
     },
     {
       "id": "kadernictvi",
-      "label": "Studio Elegance (test / sandbox)",
+      "label": "Studio Elegance — DOČASNĚ test registrace (sandbox id 6)",
       "projectDir": "testovani/studio-elegance",
       "distPath": "sites/kadernictvi",
       "hosts": ["kadernictvi.dweby.cz"],
       "hasApi": true,
       "buildEnv": {
-        "VITE_KADERNICTVI_ID": "1",
-        "VITE_BARBERSHOP_ID": "1",
+        "VITE_KADERNICTVI_ID": "6",
+        "VITE_BARBERSHOP_ID": "6",
         "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
         "VITE_ADMIN_TEMPLATE": "split",
         "VITE_ADMIN_LEGACY_UI_EMAILS": "chci.web@dweby.cz",
@@ -29,7 +29,7 @@
       "siteUrlEnv": "SITE_URL_KADERNICTVI",
       "resendFrom": "Studio Elegance <rezervace@dweby.cz>",
       "resendFromEnv": "RESEND_FROM_KADERNICTVI",
-      "defaultBarbershopName": "Studio Elegance"
+      "defaultBarbershopName": "Sandbox registrace (test)"
     },
     {
       "id": "donzi",
