@@ -5,13 +5,47 @@ import AdminLoginPage from "@/pages/admin/AdminLoginPage";
 import { AdminOwnerGuard } from "@/components/admin/AdminOwnerGuard";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import AdminStatisticsPage from "@/pages/admin/AdminStatisticsPage";
+import AdminCustomersPage from "@/pages/admin/AdminCustomersPage";
+import AdminReservationsPage from "@/pages/admin/AdminReservationsPage";
 import AdminStaffCustomersPage from "@/pages/admin/AdminStaffCustomersPage";
 import AdminStaffOverviewPage from "@/pages/admin/AdminStaffOverviewPage";
 import AdminStaffServicesPage from "@/pages/admin/AdminStaffServicesPage";
 import AdminStaffSettingsPage from "@/pages/admin/AdminStaffSettingsPage";
 import { AdminRoleHome } from "@/components/admin/AdminRoleHome";
 import { AdminStaffGuard } from "@/components/admin/AdminStaffGuard";
+import { isLegacyAdminSession } from "@/lib/admin-legacy-ui";
+import { useAdminSession } from "@/lib/use-admin-session";
 import { useRouter } from "@/lib/router";
+import { Loader2 } from "lucide-react";
+
+function AdminSessionGate({ children }: { children: React.ReactNode }) {
+  const { ready, authed } = useAdminSession();
+  if (!ready || !authed) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <p className="text-sm">Ověřuji přístup…</p>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
+function AdminHomeRoute() {
+  const { userEmail } = useAdminSession();
+  if (isLegacyAdminSession(userEmail)) return <AdminReservationsPage />;
+  return <AdminRoleHome />;
+}
+
+function AdminCustomersRoute() {
+  const { userEmail } = useAdminSession();
+  if (isLegacyAdminSession(userEmail)) return <AdminCustomersPage />;
+  return (
+    <AdminStaffGuard>
+      <AdminStaffCustomersPage />
+    </AdminStaffGuard>
+  );
+}
 
 export default function App() {
   const { pathname } = useRouter();
@@ -31,9 +65,21 @@ export default function App() {
   if (pathname === "/admin/statistiky" || pathname === "/admin/trzby") {
     return (
       <AdminLayout>
-        <AdminOwnerGuard>
-          <AdminStatisticsPage />
-        </AdminOwnerGuard>
+        <AdminSessionGate>
+          <AdminOwnerGuard>
+            <AdminStatisticsPage />
+          </AdminOwnerGuard>
+        </AdminSessionGate>
+      </AdminLayout>
+    );
+  }
+
+  if (pathname === "/admin/zakaznici") {
+    return (
+      <AdminLayout>
+        <AdminSessionGate>
+          <AdminCustomersRoute />
+        </AdminSessionGate>
       </AdminLayout>
     );
   }
@@ -58,16 +104,6 @@ export default function App() {
     );
   }
 
-  if (pathname === "/admin/zakaznici") {
-    return (
-      <AdminLayout>
-        <AdminStaffGuard>
-          <AdminStaffCustomersPage />
-        </AdminStaffGuard>
-      </AdminLayout>
-    );
-  }
-
   if (pathname === "/admin/nastaveni") {
     return (
       <AdminLayout>
@@ -81,7 +117,9 @@ export default function App() {
   if (pathname === "/admin") {
     return (
       <AdminLayout>
-        <AdminRoleHome />
+        <AdminSessionGate>
+          <AdminHomeRoute />
+        </AdminSessionGate>
       </AdminLayout>
     );
   }

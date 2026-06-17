@@ -9,6 +9,17 @@ const PRAGUE_TZ = "Europe/Prague";
 const DEFAULT_SMS_UNIT_COST = 1;
 const DEFAULT_SMS_BILLING_MULTIPLIER = 1.6;
 
+/** Salóny bez SMS — výchozí Studio Elegance (id 1). Env: SMS_DISABLED_KADERNICTVI_IDS=1,5 */
+function smsDisabledKadernictviIds(): Set<number> {
+  const raw = process.env.SMS_DISABLED_KADERNICTVI_IDS?.trim() || "1";
+  return new Set(
+    raw
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0),
+  );
+}
+
 type RezervaceRow = {
   id: string;
   phone: string;
@@ -219,6 +230,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const at = parseAppointmentPrague(row.booking_date, row.booking_time);
       if (at < windowStart || at > windowEnd) {
         outsideWindow++;
+        continue;
+      }
+
+      if (row.kadernictvi_id != null && smsDisabledKadernictviIds().has(row.kadernictvi_id)) {
+        log.push(`[skip] ${row.id}: SMS vypnuto pro kadernictvi_id=${row.kadernictvi_id}`);
+        skipped++;
         continue;
       }
 

@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_REZERVACE_TABLE?: string;
   /** Čárkou oddělené e-maily účtů s přístupem jen ke čtení v /admin. */
   readonly VITE_ADMIN_READ_ONLY_EMAILS?: string;
+
+  readonly VITE_ADMIN_LEGACY_UI_EMAILS?: string;
 }
 
 interface ImportMeta {

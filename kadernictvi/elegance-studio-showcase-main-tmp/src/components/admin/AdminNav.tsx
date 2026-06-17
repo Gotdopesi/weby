@@ -1,19 +1,22 @@
 import { AppLink, useRouter } from "@/lib/router";
+import { AdminLegacyNav } from "@/components/admin/AdminLegacyNav";
 import { AdminStaffNav } from "@/components/admin/AdminStaffNav";
+import { isLegacyAdminSession } from "@/lib/admin-legacy-ui";
 import { useAdminBarbershop } from "@/lib/use-admin-barbershop";
+import { useAdminSession } from "@/lib/use-admin-session";
 import { cn } from "@/lib/utils";
 import { BarChart3 } from "lucide-react";
-
 const OWNER_LINKS = [
   { to: "/admin/statistiky", label: "Přehled salónu", icon: BarChart3, exact: false },
 ] as const;
 
 export function AdminNav() {
   const { pathname } = useRouter();
+  const { userEmail } = useAdminSession();
   const { isOwner, isStaff } = useAdminBarbershop();
 
+  if (isLegacyAdminSession(userEmail)) return <AdminLegacyNav />;
   if (isStaff) return <AdminStaffNav />;
-
   return (
     <nav className="flex flex-wrap items-center gap-2 mb-8 border-b border-border/60 pb-4">
       {isOwner && (

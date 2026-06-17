@@ -20,7 +20,9 @@
       "buildEnv": {
         "VITE_KADERNICTVI_ID": "1",
         "VITE_BARBERSHOP_ID": "1",
-        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace"
+        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
+        "VITE_ADMIN_LEGACY_UI_EMAILS": "chci.web@dweby.cz",
+        "VITE_ADMIN_READ_ONLY_EMAILS": "chci.web@dweby.cz"
       },
       "siteUrl": "https://kadernictvi.dweby.cz",
       "siteUrlEnv": "SITE_URL_KADERNICTVI",
