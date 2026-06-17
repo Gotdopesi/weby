@@ -5,6 +5,7 @@ type SiteEntry = {
   hosts: string[];
   hasApi?: boolean;
   deploy?: boolean;
+  kadernictviId?: number;
   siteUrl?: string;
   siteUrlEnv?: string;
   resendFrom?: string;
@@ -23,6 +24,7 @@ const SITES: SiteEntry[] = [
     id: "kadernictvi",
     hosts: ["kadernictvi.dweby.cz"],
     hasApi: true,
+    kadernictviId: 1,
     siteUrl: "https://kadernictvi.dweby.cz",
     siteUrlEnv: "SITE_URL_KADERNICTVI",
     resendFrom: "Studio Elegance <rezervace@dweby.cz>",
@@ -34,6 +36,7 @@ const SITES: SiteEntry[] = [
     hosts: ["donzi.dweby.cz"],
     hasApi: true,
     deploy: false,
+    kadernictviId: 5,
     siteUrl: "https://donzi.dweby.cz",
     siteUrlEnv: "SITE_URL_DONZI",
     resendFrom: "Donzi <rezervace@dweby.cz>",

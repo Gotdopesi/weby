@@ -8,8 +8,7 @@
     "build": "node scripts/build-all.mjs",
     "dev:dweby": "npm run dev --prefix dweby-main",
     "dev:donzi": "npm run dev --prefix kadernictvi/donzi-reservations-main",
-    "dev:kadernictvi": "npm run dev --prefix kadernictvi/studio-elegance",
-    "dev:kadernictvi-test": "npm run dev --prefix testovani/studio-elegance",
+    "dev:kadernictvi": "npm run dev --prefix testovani/studio-elegance",
     "dev:vercel": "vercel dev"
   },
   "dependencies": {

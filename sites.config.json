@@ -1,5 +1,5 @@
 {
-  "$comment": "Mapování domén → projekt. deploy:false = zatím se nebuildí.",
+  "$comment": "testovani/studio-elegance = test sandbox (kadernictvi.dweby.cz). Ostré salóny budou v kadernictvi/{salon}/.",
   "sites": [
     {
       "id": "dweby",
@@ -12,8 +12,8 @@
     },
     {
       "id": "kadernictvi",
-      "label": "Studio Elegance (produkce)",
-      "projectDir": "kadernictvi/studio-elegance",
+      "label": "Studio Elegance (test / sandbox)",
+      "projectDir": "testovani/studio-elegance",
       "distPath": "sites/kadernictvi",
       "hosts": ["kadernictvi.dweby.cz"],
       "hasApi": true,
@@ -21,7 +21,9 @@
         "VITE_KADERNICTVI_ID": "1",
         "VITE_BARBERSHOP_ID": "1",
         "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
-        "VITE_ADMIN_TEMPLATE": "split"
+        "VITE_ADMIN_TEMPLATE": "split",
+        "VITE_ADMIN_LEGACY_UI_EMAILS": "chci.web@dweby.cz",
+        "VITE_ADMIN_READ_ONLY_EMAILS": "chci.web@dweby.cz"
       },
       "siteUrl": "https://kadernictvi.dweby.cz",
       "siteUrlEnv": "SITE_URL_KADERNICTVI",
@@ -30,28 +32,8 @@
       "defaultBarbershopName": "Studio Elegance"
     },
     {
-      "id": "kadernictvi-test",
-      "label": "Studio Elegance (test)",
-      "projectDir": "testovani/studio-elegance",
-      "distPath": "sites/kadernictvi-test",
-      "hosts": ["test.kadernictvi.dweby.cz"],
-      "hasApi": true,
-      "buildEnv": {
-        "VITE_KADERNICTVI_ID": "1",
-        "VITE_BARBERSHOP_ID": "1",
-        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
-        "VITE_ADMIN_TEMPLATE": "legacy",
-        "VITE_ADMIN_LEGACY_UI_EMAILS": "chci.web@dweby.cz",
-        "VITE_ADMIN_READ_ONLY_EMAILS": "chci.web@dweby.cz"
-      },
-      "siteUrl": "https://test.kadernictvi.dweby.cz",
-      "siteUrlEnv": "SITE_URL_KADERNICTVI_TEST",
-      "resendFrom": "Studio Elegance <rezervace@dweby.cz>",
-      "defaultBarbershopName": "Studio Elegance (test)"
-    },
-    {
       "id": "donzi",
-      "label": "Barbershop Donzi",
+      "label": "Barbershop Donzi (ostrý — připraveno)",
       "deploy": false,
       "projectDir": "kadernictvi/donzi-reservations-main",
       "distPath": "sites/donzi",
