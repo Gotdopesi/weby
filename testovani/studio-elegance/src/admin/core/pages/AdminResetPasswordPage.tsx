@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+function hasRecoveryInUrl(): boolean {
+  const hash = window.location.hash.replace(/^#/, "");
+  if (hash) {
+    const params = new URLSearchParams(hash);
+    if (params.get("type") === "recovery" && params.get("access_token")) return true;
+  }
+  const search = new URLSearchParams(window.location.search);
+  return Boolean(search.get("code"));
+}
+
 export default function AdminResetPasswordPage() {
   const { navigate } = useRouter();
   const [password, setPassword] = useState("");
@@ -18,19 +28,64 @@ export default function AdminResetPasswordPage() {
   useEffect(() => {
     let cancelled = false;
 
+    const markReady = (recovery: boolean) => {
+      if (cancelled) return;
+      setHasRecovery(recovery);
+      setReady(true);
+    };
+
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
-      if (event === "PASSWORD_RECOVERY" || session) {
-        setHasRecovery(true);
-        setReady(true);
+      if (event === "PASSWORD_RECOVERY") {
+        markReady(true);
+        return;
+      }
+      if (session && (event === "INITIAL_SESSION" || event === "SIGNED_IN") && hasRecoveryInUrl()) {
+        markReady(true);
       }
     });
 
-    void supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      if (data.session) setHasRecovery(true);
-      setReady(true);
-    });
+    void (async () => {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = searchParams.get("code");
+
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+          if (error) {
+            console.error(error);
+            toast.error("Odkaz pro reset hesla je neplatný nebo vypršel.");
+            markReady(false);
+            return;
+          }
+          window.history.replaceState({}, "", window.location.pathname);
+          markReady(true);
+          return;
+        }
+
+        if (window.location.hash.includes("access_token")) {
+          await new Promise((r) => setTimeout(r, 150));
+        }
+
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error(error);
+          markReady(false);
+          return;
+        }
+
+        if (data.session && (hasRecoveryInUrl() || window.location.hash.includes("type=recovery"))) {
+          window.history.replaceState({}, "", window.location.pathname);
+          markReady(true);
+          return;
+        }
+
+        markReady(false);
+      } catch (e) {
+        console.error(e);
+        markReady(false);
+      }
+    })();
 
     return () => {
       cancelled = true;

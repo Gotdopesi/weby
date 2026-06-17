@@ -29,10 +29,12 @@ type Preview = {
 };
 
 export default function CancelReservationPage() {
-  const token = useMemo(
-    () => new URLSearchParams(window.location.search).get("token")?.trim() ?? "",
-    [],
-  );
+  const cancelRef = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("k")?.trim() ?? "";
+    const token = params.get("token")?.trim() ?? "";
+    return { code, token };
+  }, []);
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function CancelReservationPage() {
   const [canceling, setCanceling] = useState(false);
 
   const load = useCallback(async () => {
-    if (!token) {
+    if (!cancelRef.code && !cancelRef.token) {
       setError("Chybí platný odkaz z e-mailu.");
       setLoading(false);
       return;
@@ -49,7 +51,10 @@ export default function CancelReservationPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/cancel-booking?token=${encodeURIComponent(token)}`);
+      const qs = cancelRef.code
+        ? `k=${encodeURIComponent(cancelRef.code)}`
+        : `token=${encodeURIComponent(cancelRef.token)}`;
+      const res = await fetch(`/api/cancel-booking?${qs}`);
       const body = (await res.json().catch(() => ({}))) as Preview & { error?: string };
       if (!res.ok) {
         setError(body.error ?? "Rezervaci se nepodařilo načíst.");
@@ -62,20 +67,22 @@ export default function CancelReservationPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [cancelRef]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const confirmCancel = async () => {
-    if (!token) return;
+    if (!cancelRef.code && !cancelRef.token) return;
     setCanceling(true);
     try {
       const res = await fetch("/api/cancel-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify(
+          cancelRef.code ? { k: cancelRef.code } : { token: cancelRef.token },
+        ),
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {

@@ -3,7 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const REZERVACE_TABLE = "kadernictvi_rezervace";
-const KADERNICTVI_TABLE = "kadernictvi";
 const PRAGUE_TZ = "Europe/Prague";
 const MIN_HOURS_BEFORE = 24;
 
@@ -102,7 +101,7 @@ async function loadReservation(
   id: string,
 ): Promise<{ row: Record<string, unknown> | null; error: string | null }> {
   const baseSelect =
-    "id, first_name, last_name, service, booking_date, booking_time, status";
+    "id, first_name, last_name, service, booking_date, booking_time, status, cancel_code";
 
   const { data, error } = await supabase
     .from(REZERVACE_TABLE)
@@ -131,6 +130,54 @@ async function loadReservation(
   return { row: plain as Record<string, unknown>, error: null };
 }
 
+async function loadReservationByCode(
+  supabase: ReturnType<typeof createSupabaseAdmin>,
+  code: string,
+): Promise<{ row: Record<string, unknown> | null; error: string | null }> {
+  const baseSelect =
+    "id, first_name, last_name, service, booking_date, booking_time, status, cancel_code";
+
+  const { data, error } = await supabase
+    .from(REZERVACE_TABLE)
+    .select(`${baseSelect}, kadernictvi ( name )`)
+    .eq("cancel_code", code)
+    .maybeSingle();
+
+  if (!error && data) return { row: data as Record<string, unknown>, error: null };
+
+  if (error) {
+    console.warn("[cancel-booking] load by code with join failed:", error.message);
+  }
+
+  const { data: plain, error: plainErr } = await supabase
+    .from(REZERVACE_TABLE)
+    .select(baseSelect)
+    .eq("cancel_code", code)
+    .maybeSingle();
+
+  if (plainErr) {
+    console.error("[cancel-booking] load by code", plainErr.message);
+    return { row: null, error: plainErr.message };
+  }
+  if (!plain) return { row: null, error: null };
+
+  return { row: plain as Record<string, unknown>, error: null };
+}
+
+function readCancelRef(req: VercelRequest): { token?: string; code?: string } {
+  const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  const token =
+    (req.method === "GET" ? (req.query.token as string | undefined) : undefined) ??
+    body?.token;
+  const code =
+    (req.method === "GET" ? (req.query.k as string | undefined) : undefined) ??
+    body?.k;
+  return {
+    token: typeof token === "string" ? token.trim() : undefined,
+    code: typeof code === "string" ? code.trim() : undefined,
+  };
+}
+
 function cors(res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -142,39 +189,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return res.status(204).end();
 
   try {
-    const tokenRaw =
-      (req.method === "GET" ? (req.query.token as string | undefined) : undefined) ??
-      (typeof req.body === "string" ? JSON.parse(req.body) : req.body)?.token;
-
-    if (!tokenRaw || typeof tokenRaw !== "string") {
-      return res.status(400).json({ error: "token is required" });
-    }
-
-    const parsed = parseCancelToken(tokenRaw);
-    if (!parsed) {
-      return res.status(400).json({ error: "Neplatný odkaz na zrušení." });
-    }
+    const { token: tokenRaw, code: codeRaw } = readCancelRef(req);
 
     const supabase = createSupabaseAdmin();
-    const loaded = await loadReservation(supabase, parsed.id);
+    let row: Record<string, unknown> | null = null;
+    let reservationId: string;
+    let bookingDate: string;
+    let bookingTime: string;
 
-    if (!loaded.row) {
-      return res.status(404).json({
-        error: loaded.error
-          ? `Rezervaci se nepodařilo načíst: ${loaded.error}`
-          : "Rezervace nenalezena.",
-      });
+    if (codeRaw) {
+      const loaded = await loadReservationByCode(supabase, codeRaw);
+      if (!loaded.row) {
+        return res.status(404).json({
+          error: loaded.error
+            ? `Rezervaci se nepodařilo načíst: ${loaded.error}`
+            : "Rezervace nenalezena.",
+        });
+      }
+      row = loaded.row;
+      reservationId = String(row.id);
+      bookingDate = String(row.booking_date);
+      bookingTime = normalizeBookingTime(String(row.booking_time));
+    } else if (tokenRaw) {
+      const parsed = parseCancelToken(tokenRaw);
+      if (!parsed) {
+        return res.status(400).json({ error: "Neplatný odkaz na zrušení." });
+      }
+
+      const loaded = await loadReservation(supabase, parsed.id);
+      if (!loaded.row) {
+        return res.status(404).json({
+          error: loaded.error
+            ? `Rezervaci se nepodařilo načíst: ${loaded.error}`
+            : "Rezervace nenalezena.",
+        });
+      }
+      row = loaded.row;
+      reservationId = parsed.id;
+      bookingDate = String(row.booking_date);
+      bookingTime = normalizeBookingTime(String(row.booking_time));
+
+      if (bookingDate !== parsed.bookingDate || bookingTime !== parsed.bookingTime) {
+        return res.status(400).json({ error: "Odkaz neodpovídá aktuální rezervaci." });
+      }
+    } else {
+      return res.status(400).json({ error: "Chybí platný odkaz z e-mailu." });
     }
 
-    const row = loaded.row;
-
-    const shop = row[KADERNICTVI_TABLE] as { name: string } | null;
-    const bookingDate = String(row.booking_date);
-    const bookingTime = normalizeBookingTime(String(row.booking_time));
-
-    if (bookingDate !== parsed.bookingDate || bookingTime !== parsed.bookingTime) {
-      return res.status(400).json({ error: "Odkaz neodpovídá aktuální rezervaci." });
-    }
+    const shop = row.kadernictvi as { name: string } | null;
 
     if (String(row.status) === "canceled") {
       return res.status(410).json({ error: "Rezervace už byla zrušena." });
@@ -184,7 +246,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const canCancel = canCancelByPolicy(bookingDate, bookingTime);
 
     const summary = {
-      id: parsed.id,
+      id: reservationId,
       customerName: [row.first_name, row.last_name].filter(Boolean).join(" ").trim(),
       service: String(row.service),
       bookingDate,
@@ -213,7 +275,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { error: cancelErr } = await supabase
       .from(REZERVACE_TABLE)
       .update({ status: "canceled" })
-      .eq("id", parsed.id);
+      .eq("id", reservationId);
 
     if (cancelErr) {
       console.error("[cancel-booking] cancel", cancelErr);

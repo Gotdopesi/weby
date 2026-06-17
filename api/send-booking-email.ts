@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { createHmac } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { Resend } from "resend";
+import { buildBookingConfirmationEmail } from "../lib/salon-email-html";
 
 const REZERVACE_TABLE = "kadernictvi_rezervace";
 
@@ -11,9 +12,8 @@ function hostFromRequest(req: VercelRequest): string {
 
 function getPublicSiteUrl(req: VercelRequest): string {
   const host = hostFromRequest(req);
-  const fromEnv =
-    process.env.SITE_URL_KADERNICTVI?.trim() ||
-    process.env.SITE_URL?.trim();
+  if (host && !host.includes("vercel.app")) return `https://${host}`;
+  const fromEnv = process.env.SITE_URL_KADERNICTVI?.trim() || process.env.SITE_URL?.trim();
   if (fromEnv) {
     try {
       return new URL(fromEnv.startsWith("http") ? fromEnv : `https://${fromEnv}`).origin;
@@ -45,18 +45,8 @@ function getResendFrom(req: VercelRequest): string {
 }
 
 function getDefaultShopName(req: VercelRequest): string {
-  const host = hostFromRequest(req);
-  if (host.includes("donzi")) return "Barbershop Donzi";
+  if (hostFromRequest(req).includes("donzi")) return "Barbershop Donzi";
   return "Studio Elegance";
-}
-
-function withDeploymentProtectionBypass(url: string): string {
-  const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
-  if (!secret) return url;
-  const u = new URL(url);
-  u.searchParams.set("x-vercel-protection-bypass", secret);
-  u.searchParams.set("x-vercel-set-bypass-cookie", "true");
-  return u.toString();
 }
 
 function cancelSecretOptional(): string | null {
@@ -69,58 +59,45 @@ function normalizeBookingTime(time: string): string {
   return `${m[1].padStart(2, "0")}:${m[2]}`;
 }
 
-function buildCancelReservationUrl(
-  req: VercelRequest,
-  reservationId: string,
-  bookingDate: string,
-  bookingTime: string,
-): string | null {
-  const secret = cancelSecretOptional();
-  if (!secret) return null;
-  const time = normalizeBookingTime(bookingTime);
-  const payload = `${reservationId}|${bookingDate}|${time}`;
-  const sig = createHmac("sha256", secret).update(payload).digest("base64url");
-  const token = Buffer.from(`${payload}|${sig}`).toString("base64url");
-  return withDeploymentProtectionBypass(
-    `${getPublicSiteUrl(req)}/zrusit-rezervaci?token=${encodeURIComponent(token)}`,
-  );
+function newCancelCode(): string {
+  return randomBytes(9).toString("base64url").replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
 }
 
-type BookingEmailPayload = {
-  customerName: string;
-  service: string;
-  bookingDate: string;
-  bookingTime: string;
-  barbershopName: string;
-  barbershopEmail?: string | null;
-  phone: string;
-  cancelUrl: string | null;
-};
+async function ensureCancelCode(
+  supabase: SupabaseClient,
+  reservationId: string,
+): Promise<string | null> {
+  if (!cancelSecretOptional()) return null;
 
-function buildBookingConfirmationHtml(p: BookingEmailPayload): string {
-  const contact = p.barbershopEmail
-    ? `<a href="mailto:${p.barbershopEmail}" style="color:#b8860b;text-decoration:none;">${p.barbershopEmail}</a>`
-    : "viz web salónu";
-  const cancelBlock = p.cancelUrl
-    ? `<p style="margin:0 0 20px;color:#555;font-size:14px;">Rezervaci můžete zrušit online nejpozději 24&nbsp;hodin před termínem.</p>
-       <a href="${p.cancelUrl}" style="display:inline-block;padding:14px 28px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:8px;">Zrušit rezervaci</a>`
-    : "";
+  const { data: existing } = await supabase
+    .from(REZERVACE_TABLE)
+    .select("cancel_code")
+    .eq("id", reservationId)
+    .maybeSingle();
 
-  return `<!DOCTYPE html><html lang="cs"><body style="font-family:Georgia,serif;background:#f4f1ec;padding:24px;">
-    <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;">
-      <p style="color:#d4af37;font-size:12px;letter-spacing:.2em;">POTVRZENÍ REZERVACE</p>
-      <h1 style="font-weight:normal;">${p.barbershopName}</h1>
-      <p>Dobrý den, <strong>${p.customerName}</strong>,</p>
-      <p>děkujeme za rezervaci:</p>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-        <tr><td style="padding:8px;color:#888;">Služba</td><td><strong>${p.service}</strong></td></tr>
-        <tr><td style="padding:8px;color:#888;">Datum</td><td><strong>${p.bookingDate}</strong></td></tr>
-        <tr><td style="padding:8px;color:#888;">Čas</td><td><strong>${p.bookingTime}</strong></td></tr>
-        <tr><td style="padding:8px;color:#888;">Telefon</td><td>${p.phone}</td></tr>
-      </table>
-      <p>Kontakt salónu: ${contact}</p>
-      ${cancelBlock}
-    </div></body></html>`;
+  if (existing?.cancel_code) return String(existing.cancel_code);
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = newCancelCode();
+    const { error } = await supabase
+      .from(REZERVACE_TABLE)
+      .update({ cancel_code: code })
+      .eq("id", reservationId)
+      .is("cancel_code", null);
+    if (!error) return code;
+
+    const { data: retry } = await supabase
+      .from(REZERVACE_TABLE)
+      .select("cancel_code")
+      .eq("id", reservationId)
+      .maybeSingle();
+    if (retry?.cancel_code) return String(retry.cancel_code);
+  }
+  return null;
+}
+
+function buildCancelReservationUrl(req: VercelRequest, cancelCode: string): string {
+  return `${getPublicSiteUrl(req)}/zrusit-rezervaci?k=${encodeURIComponent(cancelCode)}`;
 }
 
 function requireEnv(name: string): string {
@@ -221,9 +198,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: loadError ?? "Reservation not found" });
     }
 
+    const cancelCode = await ensureCancelCode(supabase, row.id);
+    const cancelUrl = cancelCode ? buildCancelReservationUrl(req, cancelCode) : null;
+
     const resend = new Resend(requireEnv("RESEND_API_KEY"));
     const from = getResendFrom(req);
-    const cancelUrl = buildCancelReservationUrl(req, row.id, row.booking_date, row.booking_time);
     const customerName = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
 
     const { data: sent, error: sendErr } = await sendConfirmationEmail(
@@ -231,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       from,
       row.email,
       `Potvrzení rezervace — ${row.barbershopName}`,
-      buildBookingConfirmationHtml({
+      buildBookingConfirmationEmail({
         customerName,
         service: row.service,
         bookingDate: row.booking_date,

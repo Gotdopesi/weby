@@ -1,7 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+import { buildPasswordResetEmail } from "../lib/salon-email-html";
 
 const ADMINI_TABLE = "kadernictvi_admini";
+const KADERNICTVI_TABLE = "kadernictvi";
 
 function hostFromRequest(req: VercelRequest): string {
   return (req.headers.host ?? "").split(":")[0].toLowerCase();
@@ -19,6 +22,21 @@ function getPublicSiteUrl(req: VercelRequest): string {
     }
   }
   return "https://kadernictvi.dweby.cz";
+}
+
+function getResendFrom(req: VercelRequest): string {
+  if (process.env.RESEND_USE_SANDBOX?.trim() === "true") {
+    return "Studio Elegance <onboarding@resend.dev>";
+  }
+  const host = hostFromRequest(req);
+  if (host.includes("donzi")) {
+    return process.env.RESEND_FROM_DONZI?.trim() || process.env.RESEND_FROM?.trim() || "Donzi <onboarding@resend.dev>";
+  }
+  return (
+    process.env.RESEND_FROM_KADERNICTVI?.trim() ||
+    process.env.RESEND_FROM?.trim() ||
+    "Studio Elegance <onboarding@resend.dev>"
+  );
 }
 
 function resolveKadernictviId(req: VercelRequest): number {
@@ -109,11 +127,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    const { data: shop } = await admin
+      .from(KADERNICTVI_TABLE)
+      .select("name")
+      .eq("id", kadernictviId)
+      .maybeSingle();
+
     const redirectTo = `${getPublicSiteUrl(req)}/admin/reset-password`;
-    const { error: resetErr } = await admin.auth.resetPasswordForEmail(trimmedEmail, {
-      redirectTo,
+    const { data: linkData, error: genErr } = await admin.auth.admin.generateLink({
+      type: "recovery",
+      email: trimmedEmail,
+      options: { redirectTo },
     });
-    if (resetErr) throw resetErr;
+    if (genErr) throw genErr;
+
+    const actionLink = linkData.properties?.action_link;
+    if (!actionLink) {
+      throw new Error("Nepodařilo se vytvořit odkaz pro obnovení hesla.");
+    }
+
+    const resendKey = process.env.RESEND_API_KEY?.trim();
+    if (!resendKey) throw new Error("RESEND_API_KEY is required.");
+
+    const resend = new Resend(resendKey);
+    const { error: sendErr } = await resend.emails.send({
+      from: getResendFrom(req),
+      to: [trimmedEmail],
+      subject: `Obnovení hesla — ${shop?.name ?? "Admin"}`,
+      html: buildPasswordResetEmail({
+        shopName: shop?.name ?? "Salón",
+        actionLink,
+      }),
+    });
+    if (sendErr) throw sendErr;
 
     return res.status(200).json({ ok: true, sent: true });
   } catch (e) {
