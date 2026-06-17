@@ -9,9 +9,9 @@ import { toast } from "sonner";
 import { withTimeout } from "@/lib/promise-timeout";
 import { AdminDevQuickLogin } from "@/admin/core/components/AdminDevQuickLogin";
 import {
-  adminResetPasswordRedirectUrl,
   fetchCanRegisterOwner,
   registerOwnerAccount,
+  requestAdminPasswordReset,
 } from "@/admin/core/lib/admin-auth-api";
 
 const AUTH_BOOT_MS = 18_000;
@@ -120,15 +120,13 @@ export default function AdminLoginPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: adminResetPasswordRedirectUrl(),
-    });
+    const err = await requestAdminPasswordReset(email);
     setLoading(false);
-    if (error) {
-      toast.error("Odeslání e-mailu se nezdařilo. Zkuste to znovu.");
+    if (err) {
+      toast.error(err);
       return;
     }
-    toast.success("Pokud účet existuje, poslali jsme odkaz pro obnovení hesla.", {
+    toast.success("Odkaz pro obnovení hesla byl odeslán.", {
       description: "Zkontrolujte doručenou poštu (i spam).",
       duration: 12_000,
     });

@@ -30,6 +30,17 @@ export async function registerOwnerAccount(email: string, password: string): Pro
   return null;
 }
 
+export async function requestAdminPasswordReset(email: string): Promise<string | null> {
+  const res = await fetch("/api/admin/request-password-reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.trim() }),
+  });
+  const data = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) return data.error ?? "Odeslání e-mailu se nezdařilo.";
+  return null;
+}
+
 export function adminResetPasswordRedirectUrl(): string {
   if (typeof window !== "undefined") {
     return `${window.location.origin}/admin/reset-password`;
