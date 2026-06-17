@@ -1,5 +1,5 @@
 {
-  "$comment": "Mapování domén → projekt. deploy:false = zatím se nebuildí (Donzi přidáš později).",
+  "$comment": "Mapování domén → projekt. deploy:false = zatím se nebuildí.",
   "sites": [
     {
       "id": "dweby",
@@ -12,8 +12,8 @@
     },
     {
       "id": "kadernictvi",
-      "label": "Studio Elegance",
-      "projectDir": "kadernictvi/elegance-studio-showcase-main-tmp",
+      "label": "Studio Elegance (produkce)",
+      "projectDir": "kadernictvi/studio-elegance",
       "distPath": "sites/kadernictvi",
       "hosts": ["kadernictvi.dweby.cz"],
       "hasApi": true,
@@ -21,14 +21,33 @@
         "VITE_KADERNICTVI_ID": "1",
         "VITE_BARBERSHOP_ID": "1",
         "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
-        "VITE_ADMIN_LEGACY_UI_EMAILS": "chci.web@dweby.cz",
-        "VITE_ADMIN_READ_ONLY_EMAILS": "chci.web@dweby.cz"
+        "VITE_ADMIN_TEMPLATE": "split"
       },
       "siteUrl": "https://kadernictvi.dweby.cz",
       "siteUrlEnv": "SITE_URL_KADERNICTVI",
       "resendFrom": "Studio Elegance <rezervace@dweby.cz>",
       "resendFromEnv": "RESEND_FROM_KADERNICTVI",
       "defaultBarbershopName": "Studio Elegance"
+    },
+    {
+      "id": "kadernictvi-test",
+      "label": "Studio Elegance (test)",
+      "projectDir": "testovani/studio-elegance",
+      "distPath": "sites/kadernictvi-test",
+      "hosts": ["test.kadernictvi.dweby.cz"],
+      "hasApi": true,
+      "buildEnv": {
+        "VITE_KADERNICTVI_ID": "1",
+        "VITE_BARBERSHOP_ID": "1",
+        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
+        "VITE_ADMIN_TEMPLATE": "legacy",
+        "VITE_ADMIN_LEGACY_UI_EMAILS": "chci.web@dweby.cz",
+        "VITE_ADMIN_READ_ONLY_EMAILS": "chci.web@dweby.cz"
+      },
+      "siteUrl": "https://test.kadernictvi.dweby.cz",
+      "siteUrlEnv": "SITE_URL_KADERNICTVI_TEST",
+      "resendFrom": "Studio Elegance <rezervace@dweby.cz>",
+      "defaultBarbershopName": "Studio Elegance (test)"
     },
     {
       "id": "donzi",
@@ -41,7 +60,8 @@
       "buildEnv": {
         "VITE_KADERNICTVI_ID": "5",
         "VITE_BARBERSHOP_ID": "5",
-        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace"
+        "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
+        "VITE_ADMIN_TEMPLATE": "combined"
       },
       "siteUrl": "https://donzi.dweby.cz",
       "siteUrlEnv": "SITE_URL_DONZI",
