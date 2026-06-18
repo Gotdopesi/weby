@@ -1,9 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
-import { KADERNICTVI_TABULKY, rezervaceTableFromEnv } from "./lib/kadernictvi-tables";
-import { resolveSite } from "./tenant";
 
-const REZERVACE_TABLE = rezervaceTableFromEnv();
+const REZERVACE_TABLE = "kadernictvi_rezervace";
+const KADERNICTVI_TABLE = "kadernictvi";
 
 type CreateBookingBody = {
   kadernictvi_id?: number;
@@ -21,10 +20,16 @@ type CreateBookingBody = {
   note?: string | null;
 };
 
-function requireEnv(name: string): string {
-  const v = process.env[name]?.trim();
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
+function hostFromRequest(req: VercelRequest): string {
+  return (req.headers.host ?? "").split(":")[0].toLowerCase();
+}
+
+function resolveKadernictviId(req: VercelRequest, body: CreateBookingBody): number {
+  const fromBody = Number(body.kadernictvi_id);
+  if (Number.isFinite(fromBody) && fromBody > 0) return fromBody;
+  if (hostFromRequest(req).includes("donzi")) return 5;
+  const fromEnv = Number(process.env.VITE_KADERNICTVI_ID ?? process.env.KADERNICTVI_ID ?? "1");
+  return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : 1;
 }
 
 function createSupabaseAdmin() {
@@ -34,15 +39,6 @@ function createSupabaseAdmin() {
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-}
-
-function resolveKadernictviId(req: VercelRequest, body: CreateBookingBody): number {
-  const fromBody = Number(body.kadernictvi_id);
-  if (Number.isFinite(fromBody) && fromBody > 0) return fromBody;
-  const site = resolveSite(req);
-  if (site?.kadernictviId && site.kadernictviId > 0) return site.kadernictviId;
-  const fromEnv = Number(process.env.VITE_KADERNICTVI_ID ?? process.env.KADERNICTVI_ID ?? "1");
-  return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : 1;
 }
 
 function normalizeTime(time: string): string {
@@ -107,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = createSupabaseAdmin();
 
     const { data: shop, error: shopErr } = await supabase
-      .from(KADERNICTVI_TABULKY.kadernictvi)
+      .from(KADERNICTVI_TABLE)
       .select("id")
       .eq("id", kadernictviId)
       .maybeSingle();
@@ -133,8 +129,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true, reservationId: created.id });
   } catch (e) {
     console.error("[create-booking]", e);
-    return res.status(400).json({
-      error: e instanceof Error ? e.message : "Neplatná data rezervace.",
-    });
+    const message = e instanceof Error ? e.message : "Neplatná data rezervace.";
+    const status = message.includes("SUPABASE") ? 503 : 400;
+    return res.status(status).json({ error: message });
   }
 }
