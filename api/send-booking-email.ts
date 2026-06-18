@@ -97,10 +97,6 @@ function buildBookingConfirmationHtml(p: BookingConfirmationPayload): string {
             Zrušit rezervaci
           </a>
         </p>
-        <p style="margin:0;font-size:13px;line-height:1.6;color:#5c574f;word-break:break-all;">
-          Nebo zkopírujte odkaz do prohlížeče:<br/>
-          <a href="${p.cancelUrl.replace(/"/g, "&quot;")}" style="color:#b8860b;text-decoration:underline;">${escapeHtml(p.cancelUrl)}</a>
-        </p>
       </div>`
     : "";
 
