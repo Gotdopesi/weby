@@ -1,9 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
-import {
-  getDefaultShopName,
-  sendBookingConfirmationForReservation,
-} from "./lib/booking-confirmation-email";
 
 const REZERVACE_TABLE = "kadernictvi_rezervace";
 const KADERNICTVI_TABLE = "kadernictvi";
@@ -24,9 +20,14 @@ type CreateBookingBody = {
   note?: string | null;
 };
 
-function resolveKadernictviId(body: CreateBookingBody): number {
+function hostFromRequest(req: VercelRequest): string {
+  return (req.headers.host ?? "").split(":")[0].toLowerCase();
+}
+
+function resolveKadernictviId(req: VercelRequest, body: CreateBookingBody): number {
   const fromBody = Number(body.kadernictvi_id);
   if (Number.isFinite(fromBody) && fromBody > 0) return fromBody;
+  if (hostFromRequest(req).includes("donzi")) return 5;
   const fromEnv = Number(process.env.VITE_KADERNICTVI_ID ?? process.env.KADERNICTVI_ID ?? "1");
   return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : 1;
 }
@@ -38,6 +39,50 @@ function createSupabaseAdmin() {
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+function getPublicSiteUrl(req: VercelRequest): string {
+  const host = hostFromRequest(req);
+  if (host && !host.includes("vercel.app")) return `https://${host}`;
+  const fromEnv = process.env.SITE_URL_KADERNICTVI?.trim() || process.env.SITE_URL?.trim();
+  if (fromEnv) {
+    try {
+      return new URL(fromEnv.startsWith("http") ? fromEnv : `https://${fromEnv}`).origin;
+    } catch {
+      /* fallback */
+    }
+  }
+  if (host.includes("donzi")) return "https://donzi.dweby.cz";
+  return "https://kadernictvi.dweby.cz";
+}
+
+async function triggerBookingEmail(
+  req: VercelRequest,
+  reservationId: string,
+): Promise<{ emailSent: boolean; error?: string | null }> {
+  try {
+    const proto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim() || "https";
+    const host = req.headers.host ?? new URL(getPublicSiteUrl(req)).host;
+    const res = await fetch(`${proto}://${host}/api/send-booking-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reservationId }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      emailSent?: boolean;
+      ok?: boolean;
+      error?: string;
+    };
+    if (res.ok && (data.emailSent || data.ok)) {
+      return { emailSent: true };
+    }
+    return { emailSent: false, error: data.error ?? `HTTP ${res.status}` };
+  } catch (e) {
+    return {
+      emailSent: false,
+      error: e instanceof Error ? e.message : "Nepodařilo se odeslat potvrzovací e-mail.",
+    };
+  }
 }
 
 function normalizeTime(time: string): string {
@@ -98,7 +143,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const body = (typeof req.body === "string" ? JSON.parse(req.body) : req.body) as CreateBookingBody;
     const row = validateBody(body);
-    const kadernictviId = resolveKadernictviId(body);
+    const kadernictviId = resolveKadernictviId(req, body);
     const supabase = createSupabaseAdmin();
 
     const { data: shop, error: shopErr } = await supabase
@@ -125,11 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: error?.message ?? "Rezervaci se nepodařilo uložit." });
     }
 
-    const email = await sendBookingConfirmationForReservation(
-      req,
-      String(created.id),
-      getDefaultShopName(req),
-    );
+    const email = await triggerBookingEmail(req, String(created.id));
 
     return res.status(200).json({
       ok: true,
