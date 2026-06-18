@@ -222,22 +222,29 @@ async function sendViaResend(
   let lastError: { message: string } | null = null;
   for (const from of fromCandidates) {
     const result = await resend.emails.send({ from, to: [to], subject, html });
-    if (!result.error) return result;
+    if (!result.error) return { result, emailSent: true };
     lastError = result.error;
     console.warn("[send-booking-email] resend failed:", from, result.error.message);
   }
 
-  // Sandbox jen při explicitním RESEND_USE_SANDBOX — jinak by šly maily jen na účet v Resend.
-  if (process.env.RESEND_USE_SANDBOX?.trim() === "true") {
-    return resend.emails.send({
-      from: "Studio Elegance <onboarding@resend.dev>",
+  // Rezervace: po selhání vlastní domény zkusíme Resend sandbox (reset hesla to nedělá).
+  const sandboxFrom = "Studio Elegance <onboarding@resend.dev>";
+  if (!fromCandidates.includes(sandboxFrom)) {
+    const fallback = await resend.emails.send({
+      from: sandboxFrom,
       to: [to],
       subject,
       html,
     });
+    if (!fallback.error) return { result: fallback, emailSent: true };
+    lastError = fallback.error;
+    console.warn("[send-booking-email] sandbox fallback failed:", fallback.error.message);
   }
 
-  return { data: null, error: lastError ?? { message: "Resend send failed" } };
+  return {
+    result: { data: null, error: lastError ?? { message: "Resend send failed" } },
+    emailSent: false,
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -269,7 +276,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const cancelUrl = cancelCode ? buildCancelReservationUrl(req, cancelCode) : null;
     const customerName = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
 
-    const { data: sent, error: sendErr } = await sendViaResend(
+    const { emailSent } = await sendViaResend(
       req,
       row.email,
       `Potvrzení rezervace — ${row.barbershopName}`,
@@ -285,12 +292,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     );
 
-    if (sendErr) {
-      console.error("[send-booking-email] resend", sendErr);
-      return res.status(502).json({ error: sendErr.message });
+    if (!emailSent) {
+      console.warn("[send-booking-email] confirmation not delivered to", row.email);
     }
 
-    return res.status(200).json({ ok: true, id: sent?.id });
+    return res.status(200).json({ ok: true, emailSent });
   } catch (e) {
     console.error("[send-booking-email]", e);
     return res.status(500).json({

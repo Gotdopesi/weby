@@ -218,3 +218,42 @@ export async function setStaffServiceOffered(
     await unlinkServiceFromStaff(staffId, serviceId);
   }
 }
+
+/** Kadeřníci, kteří nabízejí danou službu (pro výběr po zvolení služby). */
+export async function fetchStaffIdsOfferingService(
+  serviceId: number,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
+): Promise<number[]> {
+  if (!isSupabaseConfigured() || serviceId <= 0) return [];
+
+  const staffIds = await activeStaffIds(barbershopId);
+  if (staffIds.length === 0) return [];
+
+  const allIds = (await loadAllShopServices(barbershopId, true)).map((s) => s.id);
+  if (!allIds.includes(serviceId)) return [];
+
+  const { data: links, error } = await supabase
+    .from(KADERNICTVI_TABULKY.pracovnikSluzby)
+    .select("pracovnik_id, service_id")
+    .in("pracovnik_id", staffIds);
+
+  if (error) {
+    console.warn("[fetchStaffIdsOfferingService]", error.message);
+    return staffIds;
+  }
+
+  const linksByStaff = new Map<number, Set<number>>();
+  for (const row of links ?? []) {
+    const sid = Number(row.pracovnik_id);
+    const sidService = Number(row.service_id);
+    if (sid <= 0 || sidService <= 0) continue;
+    if (!linksByStaff.has(sid)) linksByStaff.set(sid, new Set());
+    linksByStaff.get(sid)!.add(sidService);
+  }
+
+  return staffIds.filter((sid) => {
+    const linked = linksByStaff.get(sid);
+    if (!linked || linked.size === 0) return true;
+    return linked.has(serviceId);
+  });
+}

@@ -31,7 +31,7 @@ import {
 import { hoursForStaffOnDay, parseStaffWorkSchedule } from "@/lib/staff-schedule";
 import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
 import { REZERVACE_TABLE } from "@/lib/rezervace";
-import { fetchServicesForBooking } from "@/admin/templates/staff/lib/staff-services";
+import { fetchServicesForBooking, fetchStaffIdsOfferingService } from "@/admin/templates/staff/lib/staff-services";
 import { withTimeout } from "@/lib/promise-timeout";
 import {
   STAFF_ANY,
@@ -117,9 +117,11 @@ export function BookingDialog({
   const [staffBlocks, setStaffBlocks] = useState<StaffBlock[]>([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [servicesList, setServicesList] = useState<ServiceOption[]>([]);
+  const [staffIdsForService, setStaffIdsForService] = useState<number[] | null>(null);
 
   const maxBookingDate = addDays(startOfDay(new Date()), MAX_BOOKING_DAYS);
   const resolvedStaffId = staffSelection === STAFF_ANY ? null : staffSelection;
+  const staffLocked = initialStaffId !== STAFF_ANY;
 
   const reset = () => {
     setStep(1);
@@ -139,15 +141,14 @@ export function BookingDialog({
     setBookedWithStaff([]);
     setStaffBlocks([]);
     setLoadingTimes(false);
+    setStaffIdsForService(null);
   };
 
   useEffect(() => {
     if (!open) return;
     setStaffSelection(initialStaffId);
-    const hasStaff = initialStaffId !== STAFF_ANY;
     const hasService = Boolean(initialServiceName?.trim());
-    if (hasStaff && hasService) setStep(3);
-    else if (hasStaff) setStep(2);
+    if (initialStaffId !== STAFF_ANY && hasService) setStep(3);
     else setStep(1);
   }, [open, initialStaffId, initialServiceName]);
 
@@ -190,6 +191,28 @@ export function BookingDialog({
         );
       });
   }, [open, resolvedStaffId]);
+
+  useEffect(() => {
+    if (!open || !service) {
+      setStaffIdsForService(null);
+      return;
+    }
+    const serviceId = Number(service);
+    if (!Number.isFinite(serviceId) || serviceId <= 0) {
+      setStaffIdsForService(staffList.map((s) => s.id));
+      return;
+    }
+    void fetchStaffIdsOfferingService(serviceId, DEFAULT_KADERNICTVI_ID)
+      .then(setStaffIdsForService)
+      .catch(() => setStaffIdsForService(null));
+  }, [open, service, staffList]);
+
+  useEffect(() => {
+    if (staffSelection === STAFF_ANY || staffIdsForService == null) return;
+    if (!staffIdsForService.includes(staffSelection)) {
+      setStaffSelection(STAFF_ANY);
+    }
+  }, [staffIdsForService, staffSelection]);
 
   useEffect(() => {
     if (!service || servicesList.length === 0) return;
@@ -273,22 +296,16 @@ export function BookingDialog({
       }
 
       try {
-        const mailRes = await fetch("/api/send-booking-email", {
+        void fetch("/api/send-booking-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reservationId: created.id }),
-        });
-        if (!mailRes.ok) {
-          const errBody = (await mailRes.json().catch(() => ({}))) as { error?: string };
-          toast.message("Rezervace uložena.", {
-            description: errBody.error ?? "Potvrzovací e-mail se nepodařilo odeslat.",
-          });
-        } else {
-          toast.success("Rezervace potvrzena — e-mail odeslán.");
-        }
+        }).catch((mailErr) => console.warn("[booking email]", mailErr));
       } catch (mailErr) {
         console.warn("[booking email]", mailErr);
       }
+
+      toast.success("Rezervace potvrzena.");
 
       trackEvent("booking_confirmed", {
         service: serviceLabel,
@@ -309,6 +326,12 @@ export function BookingDialog({
   const selectedService = servicesList.find((s) => String(s.id) === service);
   const serviceDuration = selectedService?.duration_minutes ?? 60;
   const serviceLabel = selectedService?.name;
+  const eligibleStaff =
+    staffIdsForService == null
+      ? staffList
+      : staffList.filter((s) => staffIdsForService.includes(s.id));
+  const staffForAvailability =
+    staffSelection === STAFF_ANY && service ? eligibleStaff : staffList;
   const selectedStaffMember =
     staffSelection === STAFF_ANY
       ? null
@@ -327,7 +350,7 @@ export function BookingDialog({
         ? filterAvailableStartTimesAnyStaff(
             date,
             serviceDuration,
-            staffList,
+            staffForAvailability,
             bookedWithStaff,
             staffBlocks,
           )
@@ -409,7 +432,7 @@ export function BookingDialog({
         ? filterAvailableStartTimesAnyStaff(
             date,
             serviceDuration,
-            staffList,
+            staffForAvailability,
             bookedWithStaff,
             staffBlocks,
           ).includes(normalizeBookingTime(time))
@@ -478,6 +501,14 @@ export function BookingDialog({
 
           {step === 1 && (
             <div className="space-y-4 py-2">
+              {staffLocked && selectedStaffMember && (
+                <p className="text-sm text-muted-foreground rounded-md border border-border bg-muted/40 px-3 py-2">
+                  Rezervace u:{" "}
+                  <span className="font-medium text-foreground">
+                    {staffDisplayName(selectedStaffMember)}
+                  </span>
+                </p>
+              )}
               <div className="space-y-2">
                 <Label>Vyberte službu</Label>
                 <Select value={service} onValueChange={setService}>
@@ -497,7 +528,14 @@ export function BookingDialog({
                 </Select>
               </div>
               <DialogFooter>
-                <Button type="button" disabled={!service} onClick={() => setStep(2)}>
+                <Button
+                  type="button"
+                  disabled={!service}
+                  onClick={() => {
+                    if (staffLocked || staffSelection !== STAFF_ANY) setStep(3);
+                    else setStep(2);
+                  }}
+                >
                   Pokračovat
                 </Button>
               </DialogFooter>
@@ -515,17 +553,18 @@ export function BookingDialog({
                   </div>
                 ) : (
                   <>
-                    {staffList.length === 0 && (
+                    {eligibleStaff.length === 0 && (
                       <p className="text-sm text-muted-foreground">
-                        Seznam kadeřníků se načítá z databáze — zatím je k dispozici volba „Je mi to
-                        jedno“.
+                        Tuto službu momentálně nenabízí žádný kadeřník. Zvolte jinou službu.
                       </p>
                     )}
-                    <StylistPicker
-                      staff={staffList}
-                      value={staffSelection}
-                      onChange={setStaffSelection}
-                    />
+                    {eligibleStaff.length > 0 && (
+                      <StylistPicker
+                        staff={eligibleStaff}
+                        value={staffSelection}
+                        onChange={setStaffSelection}
+                      />
+                    )}
                   </>
                 )}
               </div>
@@ -533,7 +572,11 @@ export function BookingDialog({
                 <Button type="button" variant="ghost" onClick={() => setStep(1)}>
                   Zpět
                 </Button>
-                <Button type="button" onClick={() => setStep(3)}>
+                <Button
+                  type="button"
+                  disabled={eligibleStaff.length === 0}
+                  onClick={() => setStep(3)}
+                >
                   Pokračovat
                 </Button>
               </DialogFooter>
@@ -580,8 +623,8 @@ export function BookingDialog({
                           const sched = parseStaffWorkSchedule(selectedStaffMember.work_schedule);
                           return hoursForStaffOnDay(d, sched) == null;
                         }
-                        if (staffSelection === STAFF_ANY && staffList.length > 0) {
-                          return !staffList.some((member) => {
+                        if (staffSelection === STAFF_ANY && staffForAvailability.length > 0) {
+                          return !staffForAvailability.some((member) => {
                             const sched = parseStaffWorkSchedule(member.work_schedule);
                             return hoursForStaffOnDay(d, sched) != null;
                           });
@@ -647,7 +690,11 @@ export function BookingDialog({
               )}
 
               <DialogFooter className="flex-row sm:justify-between">
-                <Button type="button" variant="ghost" onClick={() => setStep(2)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => (staffLocked ? setStep(1) : setStep(2))}
+                >
                   Zpět
                 </Button>
                 <Button
