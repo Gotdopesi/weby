@@ -22,11 +22,16 @@ export async function fetchCanRegisterOwner(kadernictviId = DEFAULT_KADERNICTVI_
 export async function registerOwnerAccount(
   email: string,
   password: string,
+  activationCode: string,
 ): Promise<{ error: string | null; emailSent?: boolean }> {
   const res = await fetch("/api/admin/register-owner", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: email.trim(), password }),
+    body: JSON.stringify({
+      email: email.trim(),
+      password,
+      activationCode: activationCode.trim(),
+    }),
   });
   const data = (await res.json().catch(() => ({}))) as { error?: string; emailSent?: boolean };
   if (!res.ok) return { error: data.error ?? "Založení účtu se nezdařilo." };

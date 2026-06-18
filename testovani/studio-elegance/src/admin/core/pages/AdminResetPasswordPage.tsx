@@ -14,7 +14,9 @@ function hasRecoveryInUrl(): boolean {
     if (params.get("type") === "recovery" && params.get("access_token")) return true;
   }
   const search = new URLSearchParams(window.location.search);
-  return Boolean(search.get("code"));
+  if (search.get("code")) return true;
+  if (search.get("token_hash") && search.get("type") === "recovery") return true;
+  return false;
 }
 
 export default function AdminResetPasswordPage() {
@@ -49,6 +51,24 @@ export default function AdminResetPasswordPage() {
       try {
         const searchParams = new URLSearchParams(window.location.search);
         const code = searchParams.get("code");
+        const tokenHash = searchParams.get("token_hash");
+        const type = searchParams.get("type");
+
+        if (tokenHash && type === "recovery") {
+          const { error } = await supabase.auth.verifyOtp({
+            type: "recovery",
+            token_hash: tokenHash,
+          });
+          if (error) {
+            console.error(error);
+            toast.error("Odkaz pro reset hesla je neplatný nebo vypršel.");
+            markReady(false);
+            return;
+          }
+          window.history.replaceState({}, "", window.location.pathname);
+          markReady(true);
+          return;
+        }
 
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);

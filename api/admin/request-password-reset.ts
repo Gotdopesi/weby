@@ -82,9 +82,9 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function buildPasswordResetHtml(shopName: string, actionLink: string): string {
+function buildPasswordResetHtml(shopName: string, resetUrl: string): string {
   const title = escapeHtml(shopName);
-  const href = actionLink.replace(/"/g, "&quot;");
+  const href = resetUrl.replace(/"/g, "&quot;");
   return `<!DOCTYPE html><html lang="cs"><body style="margin:0;padding:0;background:#f0ebe3;font-family:Georgia,serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
 <table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;">
@@ -147,6 +147,13 @@ async function sendViaResend(
   return true;
 }
 
+function buildDirectResetUrl(redirectTo: string, hashedToken: string): string {
+  const url = new URL(redirectTo);
+  url.searchParams.set("token_hash", hashedToken);
+  url.searchParams.set("type", "recovery");
+  return url.toString();
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -205,14 +212,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       options: { redirectTo },
     });
 
-    if (!genErr && linkData?.properties?.action_link) {
-      const html = buildPasswordResetHtml(shopName, linkData.properties.action_link);
+    const hashedToken = linkData?.properties?.hashed_token;
+    if (!genErr && hashedToken) {
+      const resetUrl = buildDirectResetUrl(redirectTo, hashedToken);
+      const html = buildPasswordResetHtml(shopName, resetUrl);
       const sent = await sendViaResend(req, trimmedEmail, subject, html);
       if (sent) {
         return res.status(200).json({ ok: true, sent: true, channel: "resend" });
       }
     } else if (genErr) {
       console.warn("[admin/request-password-reset] generateLink failed:", genErr.message);
+    } else if (linkData?.properties?.action_link) {
+      const html = buildPasswordResetHtml(shopName, linkData.properties.action_link);
+      const sent = await sendViaResend(req, trimmedEmail, subject, html);
+      if (sent) {
+        return res.status(200).json({ ok: true, sent: true, channel: "resend_legacy" });
+      }
     }
 
     const { error: resetErr } = await admin.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });

@@ -24,6 +24,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [activationCode, setActivationCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [canRegister, setCanRegister] = useState(false);
@@ -90,8 +91,16 @@ export default function AdminLoginPage() {
       toast.error("Heslo musí mít alespoň 8 znaků.");
       return;
     }
+    if (!activationCode.trim()) {
+      toast.error("Zadejte aktivační kód od DWeby.");
+      return;
+    }
     setLoading(true);
-    const { error: regErr, emailSent } = await registerOwnerAccount(email, password);
+    const { error: regErr, emailSent } = await registerOwnerAccount(
+      email,
+      password,
+      activationCode,
+    );
     if (regErr) {
       setLoading(false);
       toast.error(regErr);
@@ -153,7 +162,7 @@ export default function AdminLoginPage() {
     mode === "register" ? "Založit účet majitele" : mode === "forgot" ? "Zapomenuté heslo" : "Přihlášení";
   const subtitle =
     mode === "register"
-      ? "První přístup k salónu — vytvořte si majitelský účet."
+      ? "První přístup k salónu — zadejte aktivační kód od DWeby, e-mail a heslo."
       : mode === "forgot"
         ? "Na e-mail pošleme odkaz pro nastavení nového hesla."
         : "Přihlaste se e-mailem a heslem přiřazeným k vašemu salónu.";
@@ -228,6 +237,18 @@ export default function AdminLoginPage() {
         {mode === "register" && (
           <form onSubmit={signUp} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="register-activation-code">Aktivační kód</Label>
+              <Input
+                id="register-activation-code"
+                autoComplete="off"
+                value={activationCode}
+                onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
+                placeholder="XXXX-XXXX"
+                className="font-mono tracking-widest"
+              />
+              <p className="text-xs text-muted-foreground">Kód vám poskytne DWeby při spuštění salónu.</p>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="register-email">E-mail (přihlašovací jméno)</Label>
               <Input
                 id="register-email"
@@ -294,6 +315,7 @@ export default function AdminLoginPage() {
                 setMode("register");
                 setPassword("");
                 setPasswordConfirm("");
+                setActivationCode("");
               }}
             >
               Nemáte účet? Založit majitelský přístup
@@ -307,6 +329,7 @@ export default function AdminLoginPage() {
                 setMode("login");
                 setPassword("");
                 setPasswordConfirm("");
+                setActivationCode("");
               }}
             >
               ← Zpět na přihlášení

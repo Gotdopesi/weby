@@ -4,6 +4,7 @@ import { Resend } from "resend";
 
 const ADMINI_TABLE = "kadernictvi_admini";
 const KADERNICTVI_TABLE = "kadernictvi";
+const ACTIVATION_TABLE = "kadernictvi_aktivacni_kody";
 
 function hostFromRequest(req: VercelRequest): string {
   return (req.headers.host ?? "").split(":")[0].toLowerCase();
@@ -59,15 +60,23 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function readBody(req: VercelRequest): { email?: string; password?: string } {
+function readBody(req: VercelRequest): {
+  email?: string;
+  password?: string;
+  activationCode?: string;
+} {
   if (typeof req.body === "string") {
     try {
-      return JSON.parse(req.body) as { email?: string; password?: string };
+      return JSON.parse(req.body) as { email?: string; password?: string; activationCode?: string };
     } catch {
       return {};
     }
   }
-  return (req.body ?? {}) as { email?: string; password?: string };
+  return (req.body ?? {}) as { email?: string; password?: string; activationCode?: string };
+}
+
+function normalizeActivationCode(raw: string): string {
+  return raw.replace(/\s+/g, "").toUpperCase();
 }
 
 function escapeHtml(value: string): string {
@@ -158,14 +167,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, password } = readBody(req);
+  const { email, password, activationCode } = readBody(req);
   const trimmedEmail = (email ?? "").trim().toLowerCase();
+  const trimmedCode = normalizeActivationCode(activationCode ?? "");
 
   if (!isValidEmail(trimmedEmail)) {
     return res.status(400).json({ error: "Zadejte platný e-mail." });
   }
   if (!password || password.length < 8) {
     return res.status(400).json({ error: "Heslo musí mít alespoň 8 znaků." });
+  }
+  if (!trimmedCode) {
+    return res.status(400).json({ error: "Zadejte aktivační kód od DWeby." });
   }
 
   try {
@@ -180,6 +193,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if ((count ?? 0) > 0) {
       return res.status(403).json({
         error: "Pro tento salón už existuje admin účet. Požádejte majitele o přístup.",
+      });
+    }
+
+    const { data: codeRows, error: codeListErr } = await admin
+      .from(ACTIVATION_TABLE)
+      .select("id, code, expires_at")
+      .eq("kadernictvi_id", kadernictviId)
+      .is("used_at", null)
+      .gt("expires_at", new Date().toISOString());
+    if (codeListErr) throw codeListErr;
+
+    const codeMatch = (codeRows ?? []).find(
+      (row) => normalizeActivationCode(String(row.code)) === trimmedCode,
+    );
+    if (!codeMatch) {
+      return res.status(403).json({
+        error: "Neplatný nebo expirovaný aktivační kód. Kontaktujte DWeby.",
       });
     }
 
@@ -222,6 +252,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pracovnik_id: null,
     });
     if (linkErr) throw linkErr;
+
+    const { error: markCodeErr } = await admin
+      .from(ACTIVATION_TABLE)
+      .update({ used_at: new Date().toISOString(), used_by_user_id: userId })
+      .eq("id", codeMatch.id)
+      .is("used_at", null);
+    if (markCodeErr) throw markCodeErr;
 
     const { data: shop } = await admin
       .from(KADERNICTVI_TABLE)
