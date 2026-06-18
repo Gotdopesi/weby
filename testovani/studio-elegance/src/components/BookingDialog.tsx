@@ -288,11 +288,13 @@ export function BookingDialog({
 
       const createBody = (await createRes.json().catch(() => ({}))) as {
         reservationId?: string;
+        emailSent?: boolean;
+        emailError?: string | null;
         error?: string;
       };
 
       if (!createRes.ok || !createBody.reservationId) {
-        console.error("[rezervace create]", createBody);
+        console.error("[rezervace create]", createRes.status, createBody);
         toast.error("Rezervaci se nepodařilo odeslat.", {
           description: createBody.error ?? `HTTP ${createRes.status}`,
           duration: 12_000,
@@ -300,19 +302,16 @@ export function BookingDialog({
         return;
       }
 
-      const reservationId = createBody.reservationId;
-
-      try {
-        void fetch("/api/send-booking-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reservationId }),
-        }).catch((mailErr) => console.warn("[booking email]", mailErr));
-      } catch (mailErr) {
-        console.warn("[booking email]", mailErr);
+      if (createBody.emailSent) {
+        toast.success("Rezervace potvrzena — e-mail odeslán.");
+      } else {
+        toast.success("Rezervace potvrzena.", {
+          description:
+            createBody.emailError ??
+            "Potvrzovací e-mail se nepodařilo odeslat. Ověřte doménu dweby.cz v Resend.",
+          duration: 14_000,
+        });
       }
-
-      toast.success("Rezervace potvrzena.");
 
       trackEvent("booking_confirmed", {
         service: serviceLabel,

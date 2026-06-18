@@ -1,5 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import {
+  getDefaultShopName,
+  sendBookingConfirmationForReservation,
+} from "./lib/booking-confirmation-email";
 
 const REZERVACE_TABLE = "kadernictvi_rezervace";
 const KADERNICTVI_TABLE = "kadernictvi";
@@ -121,7 +125,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: error?.message ?? "Rezervaci se nepodařilo uložit." });
     }
 
-    return res.status(200).json({ ok: true, reservationId: created.id });
+    const email = await sendBookingConfirmationForReservation(
+      req,
+      String(created.id),
+      getDefaultShopName(req),
+    );
+
+    return res.status(200).json({
+      ok: true,
+      reservationId: created.id,
+      emailSent: email.emailSent,
+      emailError: email.error ?? null,
+    });
   } catch (e) {
     console.error("[create-booking]", e);
     const message = e instanceof Error ? e.message : "Neplatná data rezervace.";
