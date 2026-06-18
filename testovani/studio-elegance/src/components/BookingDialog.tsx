@@ -30,7 +30,6 @@ import {
 } from "@/lib/booking-slots";
 import { hoursForStaffOnDay, parseStaffWorkSchedule } from "@/lib/staff-schedule";
 import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
-import { REZERVACE_TABLE } from "@/lib/rezervace";
 import { fetchServicesForBooking, fetchStaffIdsOfferingService } from "@/admin/templates/staff/lib/staff-services";
 import { withTimeout } from "@/lib/promise-timeout";
 import {
@@ -262,10 +261,13 @@ export function BookingDialog({
       const serviceId = svc && svc.id > 0 ? svc.id : null;
       const durationMinutes = svc?.duration_minutes ?? 60;
       const { first_name, last_name } = splitFullName(parsed.data.name);
-      const { data: created, error } = await withTimeout(
-        supabase
-          .from(REZERVACE_TABLE)
-          .insert({
+
+      const createRes = await withTimeout(
+        fetch("/api/create-booking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kadernictvi_id: DEFAULT_KADERNICTVI_ID,
             first_name,
             last_name,
             email: parsed.data.email,
@@ -276,30 +278,35 @@ export function BookingDialog({
             duration_minutes: durationMinutes,
             booking_date: format(date, "yyyy-MM-dd"),
             booking_time: time,
-            status: "confirmed",
-            kadernictvi_id: DEFAULT_KADERNICTVI_ID,
             pracovnik_id: resolvedStaffId,
-            sms_sent: false,
-          })
-          .select("id")
-          .single(),
+            note: parsed.data.note?.trim() || null,
+          }),
+        }),
         SUBMIT_MS,
         "Odeslání rezervace",
       );
-      if (error || !created?.id) {
-        console.error("[rezervace insert]", error);
+
+      const createBody = (await createRes.json().catch(() => ({}))) as {
+        reservationId?: string;
+        error?: string;
+      };
+
+      if (!createRes.ok || !createBody.reservationId) {
+        console.error("[rezervace create]", createBody);
         toast.error("Rezervaci se nepodařilo odeslat.", {
-          description: error?.message ?? "Chybí ID rezervace.",
+          description: createBody.error ?? `HTTP ${createRes.status}`,
           duration: 12_000,
         });
         return;
       }
 
+      const reservationId = createBody.reservationId;
+
       try {
         void fetch("/api/send-booking-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reservationId: created.id }),
+          body: JSON.stringify({ reservationId }),
         }).catch((mailErr) => console.warn("[booking email]", mailErr));
       } catch (mailErr) {
         console.warn("[booking email]", mailErr);
