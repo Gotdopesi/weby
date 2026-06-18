@@ -8,7 +8,9 @@
       "distPath": "sites/dweby",
       "hosts": ["dweby.cz", "www.dweby.cz"],
       "hasApi": false,
-      "buildEnv": {}
+      "buildEnv": {
+        "VITE_ANALYTICS_SITE_NAME": "DWeby"
+      }
     },
     {
       "id": "kadernictvi",
@@ -18,6 +20,7 @@
       "hosts": ["kadernictvi.dweby.cz"],
       "hasApi": true,
       "buildEnv": {
+        "VITE_ANALYTICS_SITE_NAME": "Studio Elegance",
         "VITE_KADERNICTVI_ID": "1",
         "VITE_BARBERSHOP_ID": "1",
         "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",
@@ -40,6 +43,7 @@
       "hosts": ["donzi.dweby.cz"],
       "hasApi": true,
       "buildEnv": {
+        "VITE_ANALYTICS_SITE_NAME": "Barbershop Donzi",
         "VITE_KADERNICTVI_ID": "5",
         "VITE_BARBERSHOP_ID": "5",
         "VITE_SUPABASE_REZERVACE_TABLE": "kadernictvi_rezervace",

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -41,6 +42,7 @@ import {
 } from "@/lib/staff";
 import { toast } from "sonner";
 import type { StaffBlock } from "@/admin/templates/staff/lib/staff-blocks";
+import { trackEvent } from "@/lib/analytics";
 
 const SUBMIT_MS = 25_000;
 const FETCH_SLOTS_MS = 15_000;
@@ -106,6 +108,8 @@ export function BookingDialog({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [bookedIntervals, setBookedIntervals] = useState<BookedInterval[]>([]);
@@ -127,6 +131,8 @@ export function BookingDialog({
     setEmail("");
     setPhone("");
     setNote("");
+    setPrivacyConsent(false);
+    setConsentError(false);
     setLoading(false);
     setConfirmed(false);
     setBookedIntervals([]);
@@ -212,6 +218,11 @@ export function BookingDialog({
       toast.error("Vyplňte prosím všechny kroky rezervace.");
       return;
     }
+    if (!privacyConsent) {
+      setConsentError(true);
+      toast.error("Pro dokončení rezervace zaškrtněte souhlas se zpracováním osobních údajů.");
+      return;
+    }
     if (!isSupabaseConfigured()) {
       toast.error("Rezervace zatím není zapnutá.", {
         description:
@@ -279,6 +290,10 @@ export function BookingDialog({
         console.warn("[booking email]", mailErr);
       }
 
+      trackEvent("booking_confirmed", {
+        service: serviceLabel,
+        staff: resolvedStaffId ? "selected" : "any",
+      });
       setConfirmed(true);
     } catch (e) {
       console.error("[rezervace insert]", e);
@@ -700,6 +715,46 @@ export function BookingDialog({
                   <span className="text-muted-foreground">Termín:</span>{" "}
                   {date && format(date, "d. M. yyyy", { locale: cs })} v {time}
                 </div>
+              </div>
+
+              <div
+                className={cn(
+                  "flex items-start gap-3 rounded-md border p-3 text-sm transition-colors",
+                  consentError
+                    ? "border-destructive bg-destructive/5 ring-1 ring-destructive/30"
+                    : "border-border",
+                )}
+              >
+                <Checkbox
+                  id="privacy-consent"
+                  checked={privacyConsent}
+                  onCheckedChange={(checked) => {
+                    const on = checked === true;
+                    setPrivacyConsent(on);
+                    if (on) setConsentError(false);
+                  }}
+                  className={cn("mt-0.5", consentError && "border-destructive")}
+                />
+                <label
+                  htmlFor="privacy-consent"
+                  className={cn(
+                    "leading-snug cursor-pointer select-none",
+                    consentError ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  Seznámil(a) jsem se s{" "}
+                  <a
+                    href="/ochrana-osobnich-udaju"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-gold"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    ochranou osobních údajů
+                  </a>{" "}
+                  a souhlasím se zpracováním mých údajů (jméno, e-mail, telefon a údaje o rezervaci) za
+                  účelem vytvoření a správy rezervace.
+                </label>
               </div>
 
               <DialogFooter className="flex-row sm:justify-between">

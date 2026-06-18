@@ -35,6 +35,7 @@ import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { withTimeout } from "@/lib/promise-timeout";
 import { toast } from "sonner";
 import { ReservationSummaryTable } from "@/components/ReservationSummaryTable";
+import { trackEvent } from "@/lib/analytics";
 
 const SUBMIT_MS = 25_000;
 const FETCH_SLOTS_MS = 15_000;
@@ -253,6 +254,7 @@ export function BookingDialog({ trigger, open: controlledOpen, onOpenChange, pre
         console.warn("[booking email]", mailErr);
       }
 
+      trackEvent("booking_confirmed", { service: serviceLabel });
       setConfirmed(true);
     } catch (e) {
       console.error("[rezervace insert]", e);

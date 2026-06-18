@@ -9,24 +9,29 @@ import { Voucher } from "@/components/Voucher";
 import { Contact, Footer } from "@/components/Contact";
 import { BookingDialog } from "@/components/BookingDialog";
 import { getServiceNameById } from "@/lib/reservation-data";
+import { trackEvent } from "@/lib/analytics";
 
 export default function HomePage() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [preselectServiceName, setPreselectServiceName] = useState<string | undefined>();
 
-  const onReserve = (preselectId?: string) => {
+  const onReserve = (preselectId?: string, source = "unknown") => {
+    trackEvent("reserve_click", {
+      source,
+      ...(preselectId ? { service_id: preselectId } : {}),
+    });
     setPreselectServiceName(preselectId ? getServiceNameById(preselectId) : undefined);
     setBookingOpen(true);
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar onReserve={() => onReserve()} />
+      <Navbar onReserve={() => onReserve(undefined, "nav")} />
       <main>
-        <Hero onReserve={() => onReserve()} />
+        <Hero onReserve={() => onReserve(undefined, "hero")} />
         <About />
         <Team />
-        <Services onReserve={onReserve} />
+        <Services onReserve={(id) => onReserve(id, "services")} />
         <Gallery />
         <Voucher />
         <Contact />

@@ -6,9 +6,15 @@ import { SiteFooter } from "@/components/home/SiteFooter";
 import { SiteNav } from "@/components/home/SiteNav";
 import { AppLink } from "@/lib/router";
 import { STAFF_ANY } from "@/lib/staff";
+import { trackEvent } from "@/lib/analytics";
 
 export default function PortfolioPage() {
   const [bookingOpen, setBookingOpen] = useState(false);
+
+  const openBooking = () => {
+    trackEvent("reserve_click", { source: "portfolio" });
+    setBookingOpen(true);
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -16,7 +22,7 @@ export default function PortfolioPage() {
 
   return (
     <main>
-      <SiteNav onReserve={() => setBookingOpen(true)} />
+      <SiteNav onReserve={openBooking} />
 
       <section className="pt-28 pb-16 md:pt-36 md:pb-20 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-6">

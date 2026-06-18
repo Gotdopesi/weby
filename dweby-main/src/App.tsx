@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import projects from './data/projects.json';
+import { trackEvent } from './lib/analytics';
 
 type Project = {
   id: string;
@@ -147,6 +148,9 @@ export default function App() {
       toast.success('Děkuji, zpráva byla odeslána.', {
         description: 'Ozvu se vám co nejdříve.',
       });
+      trackEvent('contact_form_submit', {
+        typ_projektu: row.typ_projektu || 'neuvedeno',
+      });
       form.reset();
     } catch (err) {
       const description =
@@ -163,21 +167,30 @@ export default function App() {
       <a
         href="#projekty"
         className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-        onClick={closeMenu}
+        onClick={() => {
+          trackEvent('nav_click', { section: 'projekty' });
+          closeMenu();
+        }}
       >
         Projekty
       </a>
       <a
         href="#cenik"
         className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-        onClick={closeMenu}
+        onClick={() => {
+          trackEvent('nav_click', { section: 'cenik' });
+          closeMenu();
+        }}
       >
         Ceník
       </a>
       <a
         href="#kontakt"
         className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-        onClick={closeMenu}
+        onClick={() => {
+          trackEvent('nav_click', { section: 'kontakt' });
+          closeMenu();
+        }}
       >
         Kontakt
       </a>
@@ -257,12 +270,14 @@ export default function App() {
           <div className="mt-14 flex flex-wrap gap-4">
             <a
               href="#kontakt"
+              onClick={() => trackEvent('cta_click', { label: 'nezavazna_poptavka', section: 'hero' })}
               className="inline-flex items-center rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold tracking-tight text-white shadow-sm transition hover:bg-blue-700"
             >
               Nezávazná poptávka
             </a>
             <a
               href="#projekty"
+              onClick={() => trackEvent('cta_click', { label: 'vybrane_prace', section: 'hero' })}
               className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-tight text-slate-600 transition hover:text-blue-600"
             >
               Vybrané práce
@@ -327,6 +342,12 @@ export default function App() {
                 href={project.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  trackEvent('project_click', {
+                    project_id: project.id,
+                    title: project.title,
+                  })
+                }
                 className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md"
               >
                 <div className="aspect-[16/10] overflow-hidden bg-slate-100">
