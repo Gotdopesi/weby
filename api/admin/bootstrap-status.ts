@@ -14,7 +14,7 @@ function resolveKadernictviId(req: VercelRequest): number {
     process.env.VITE_KADERNICTVI_ID?.trim() ||
     process.env.VITE_BARBERSHOP_ID?.trim();
   if (fromEnv) return Number(fromEnv);
-  return hostFromRequest(req).includes("kadernictvi") ? 6 : 1;
+  return 1;
 }
 
 function createServiceClient() {
