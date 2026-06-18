@@ -212,17 +212,32 @@ async function sendViaResend(
   html: string,
 ) {
   const resend = new Resend(requireEnv("RESEND_API_KEY"));
-  const from = getResendFrom(req);
-  const primary = await resend.emails.send({ from, to: [to], subject, html });
-  if (!primary.error) return primary;
-  console.warn("[send-booking-email] resend primary failed:", primary.error.message);
-  if (from.includes("onboarding@resend.dev")) return primary;
-  return resend.emails.send({
-    from: "Studio Elegance <onboarding@resend.dev>",
-    to: [to],
-    subject,
-    html,
-  });
+  const fromCandidates = [
+    getResendFrom(req),
+    process.env.RESEND_FROM_KADERNICTVI?.trim(),
+    process.env.RESEND_FROM_DONZI?.trim(),
+    process.env.RESEND_FROM?.trim(),
+  ].filter((v, i, arr) => Boolean(v) && arr.indexOf(v) === i) as string[];
+
+  let lastError: { message: string } | null = null;
+  for (const from of fromCandidates) {
+    const result = await resend.emails.send({ from, to: [to], subject, html });
+    if (!result.error) return result;
+    lastError = result.error;
+    console.warn("[send-booking-email] resend failed:", from, result.error.message);
+  }
+
+  // Sandbox jen při explicitním RESEND_USE_SANDBOX — jinak by šly maily jen na účet v Resend.
+  if (process.env.RESEND_USE_SANDBOX?.trim() === "true") {
+    return resend.emails.send({
+      from: "Studio Elegance <onboarding@resend.dev>",
+      to: [to],
+      subject,
+      html,
+    });
+  }
+
+  return { data: null, error: lastError ?? { message: "Resend send failed" } };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

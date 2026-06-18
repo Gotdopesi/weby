@@ -10,6 +10,8 @@ export type BookingService = {
   is_active: boolean;
 };
 
+export type StaffServiceEditorRow = BookingService & { offered: boolean };
+
 function mapServiceRow(row: {
   id: number;
   name: string;
@@ -77,7 +79,18 @@ async function loadAllShopServices(
   return (data ?? []).map(mapServiceRow);
 }
 
-/** Služby jednoho kadeřníka (rezervace / admin). */
+async function activeStaffIds(barbershopId: number): Promise<number[]> {
+  const { data, error } = await supabase
+    .from(KADERNICTVI_TABULKY.pracovnici)
+    .select("id")
+    .eq("kadernictvi_id", barbershopId)
+    .eq("is_active", true);
+
+  if (error) throw error;
+  return (data ?? []).map((s) => Number(s.id)).filter((id) => id > 0);
+}
+
+/** Služby jednoho kadeřníka (rezervace / admin). Jen služby, které má v ceníku zapnuté. */
 export async function fetchServicesForStaff(
   staffId: number,
   barbershopId = DEFAULT_KADERNICTVI_ID,
@@ -92,7 +105,27 @@ export async function fetchServicesForStaff(
   return loadServicesByIds(barbershopId, ids, activeOnly);
 }
 
-/** Veřejná rezervace — podle vybraného kadeřníka, jinak sjednocení služeb celého týmu. */
+/** Admin — ceník kadeřníka: co nabízí v rezervacích (přepínač = vazba, ne globální vypnutí). */
+export async function fetchStaffServicesForEditor(
+  staffId: number,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
+): Promise<StaffServiceEditorRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const [all, linkedIds] = await Promise.all([
+    loadAllShopServices(barbershopId, true),
+    serviceIdsForStaff(staffId),
+  ]);
+  const linked = new Set(linkedIds);
+  const implicitAll = linkedIds.length === 0 && all.length > 0;
+
+  return all.map((s) => ({
+    ...s,
+    offered: implicitAll || linked.has(s.id),
+  }));
+}
+
+/** Veřejná rezervace — služba je vidět, pokud ji nabízí alespoň jeden aktivní kadeřník. */
 export async function fetchServicesForBooking(
   barbershopId = DEFAULT_KADERNICTVI_ID,
   staffId?: number | null,
@@ -103,35 +136,46 @@ export async function fetchServicesForBooking(
     return fetchServicesForStaff(staffId, barbershopId, true);
   }
 
-  const { data: staffRows, error: staffErr } = await supabase
-    .from(KADERNICTVI_TABULKY.pracovnici)
-    .select("id")
-    .eq("kadernictvi_id", barbershopId)
-    .eq("is_active", true);
-
-  if (staffErr) throw staffErr;
-
-  const staffIds = (staffRows ?? []).map((s) => Number(s.id)).filter((id) => id > 0);
+  const staffIds = await activeStaffIds(barbershopId);
   if (staffIds.length === 0) {
     return loadAllShopServices(barbershopId, true);
   }
 
+  const allServices = await loadAllShopServices(barbershopId, true);
+  const allIds = allServices.map((s) => s.id);
+
   const { data: links, error: linkErr } = await supabase
     .from(KADERNICTVI_TABULKY.pracovnikSluzby)
-    .select("service_id")
+    .select("pracovnik_id, service_id")
     .in("pracovnik_id", staffIds);
 
   if (linkErr) {
     console.warn("[fetchServicesForBooking]", linkErr.message);
-    return loadAllShopServices(barbershopId, true);
+    return allServices;
   }
 
-  const unionIds = [...new Set((links ?? []).map((r) => Number(r.service_id)).filter((id) => id > 0))];
-  if (unionIds.length === 0) {
-    return loadAllShopServices(barbershopId, true);
+  const linksByStaff = new Map<number, Set<number>>();
+  for (const row of links ?? []) {
+    const sid = Number(row.pracovnik_id);
+    const serviceId = Number(row.service_id);
+    if (sid <= 0 || serviceId <= 0) continue;
+    if (!linksByStaff.has(sid)) linksByStaff.set(sid, new Set());
+    linksByStaff.get(sid)!.add(serviceId);
   }
 
-  return loadServicesByIds(barbershopId, unionIds, true);
+  const unionIds = new Set<number>();
+  for (const sid of staffIds) {
+    const linked = linksByStaff.get(sid);
+    if (!linked || linked.size === 0) {
+      for (const id of allIds) unionIds.add(id);
+    } else {
+      for (const id of linked) unionIds.add(id);
+    }
+  }
+
+  if (unionIds.size === 0) return [];
+
+  return loadServicesByIds(barbershopId, [...unionIds], true);
 }
 
 export async function linkServiceToStaff(staffId: number, serviceId: number): Promise<void> {
@@ -139,4 +183,38 @@ export async function linkServiceToStaff(staffId: number, serviceId: number): Pr
     .from(KADERNICTVI_TABULKY.pracovnikSluzby)
     .upsert({ pracovnik_id: staffId, service_id: serviceId }, { onConflict: "pracovnik_id,service_id" });
   if (error) throw error;
+}
+
+export async function unlinkServiceFromStaff(staffId: number, serviceId: number): Promise<void> {
+  const { error } = await supabase
+    .from(KADERNICTVI_TABULKY.pracovnikSluzby)
+    .delete()
+    .eq("pracovnik_id", staffId)
+    .eq("service_id", serviceId);
+  if (error) throw error;
+}
+
+/** Zapne/vypne službu jen u tohoto kadeřníka (ne celý salón). */
+export async function setStaffServiceOffered(
+  staffId: number,
+  serviceId: number,
+  offered: boolean,
+  barbershopId = DEFAULT_KADERNICTVI_ID,
+): Promise<void> {
+  const linkedIds = await serviceIdsForStaff(staffId);
+  const all = await loadAllShopServices(barbershopId, true);
+  const allIds = all.map((s) => s.id);
+
+  if (!offered && linkedIds.length === 0 && allIds.length > 0) {
+    for (const id of allIds) {
+      if (id !== serviceId) await linkServiceToStaff(staffId, id);
+    }
+    return;
+  }
+
+  if (offered) {
+    await linkServiceToStaff(staffId, serviceId);
+  } else {
+    await unlinkServiceFromStaff(staffId, serviceId);
+  }
 }

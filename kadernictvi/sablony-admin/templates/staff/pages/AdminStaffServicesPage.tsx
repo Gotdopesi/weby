@@ -3,8 +3,10 @@ import { Loader2, LogOut, Plus, RefreshCw, Save, Scissors } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import {
-  fetchServicesForStaff,
+  fetchStaffServicesForEditor,
   linkServiceToStaff,
+  setStaffServiceOffered,
+  type StaffServiceEditorRow,
 } from "@/admin/templates/staff/lib/staff-services";
 import { useAdminBarbershop } from "@/admin/core/lib/use-admin-barbershop";
 import { useAdminSession } from "@/admin/core/lib/use-admin-session";
@@ -16,18 +18,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type ServiceRow = {
-  id: number;
-  name: string;
-  price: number;
-  duration_minutes: number;
-  is_active: boolean;
-};
-
 export default function AdminStaffServicesPage() {
   const { ready, authed, signOut } = useAdminSession();
   const { barbershopId, staffId, staffName } = useAdminBarbershop();
-  const [rows, setRows] = useState<ServiceRow[]>([]);
+  const [rows, setRows] = useState<StaffServiceEditorRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -35,16 +29,7 @@ export default function AdminStaffServicesPage() {
     if (!staffId) return;
     setLoading(true);
     try {
-      const list = await fetchServicesForStaff(staffId, barbershopId, false);
-      setRows(
-        list.map((s) => ({
-          id: s.id,
-          name: s.name,
-          price: s.price,
-          duration_minutes: s.duration_minutes,
-          is_active: s.is_active,
-        })),
-      );
+      setRows(await fetchStaffServicesForEditor(staffId, barbershopId));
     } catch (e) {
       toast.error("Služby se nepodařilo načíst.", {
         description: e instanceof Error ? e.message : String(e),
@@ -58,11 +43,11 @@ export default function AdminStaffServicesPage() {
     if (ready && authed && staffId) void load();
   }, [ready, authed, staffId, load]);
 
-  const patchRow = (id: number, patch: Partial<ServiceRow>) => {
+  const patchRow = (id: number, patch: Partial<StaffServiceEditorRow>) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   };
 
-  const save = async (row: ServiceRow) => {
+  const save = async (row: StaffServiceEditorRow) => {
     if (!staffId) return;
     if (!row.name.trim()) {
       toast.error("Název služby nesmí být prázdný.");
@@ -82,7 +67,7 @@ export default function AdminStaffServicesPage() {
           name: row.name.trim(),
           price: row.price,
           duration_minutes: row.duration_minutes,
-          is_active: row.is_active,
+          is_active: true,
         })
         .select("id")
         .single();
@@ -103,7 +88,9 @@ export default function AdminStaffServicesPage() {
       }
       setSavingId(null);
       toast.success(`Přidáno: ${row.name}`);
-      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, id: newId } : r)));
+      setRows((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, id: newId, offered: true } : r)),
+      );
       return;
     }
 
@@ -113,16 +100,43 @@ export default function AdminStaffServicesPage() {
         name: row.name.trim(),
         price: row.price,
         duration_minutes: row.duration_minutes,
-        is_active: row.is_active,
       })
       .eq("id", row.id)
       .eq("kadernictvi_id", barbershopId);
-    setSavingId(null);
     if (error) {
+      setSavingId(null);
       toast.error("Uložení se nezdařilo.", { description: error.message });
       return;
     }
+
+    try {
+      await setStaffServiceOffered(staffId, row.id, row.offered, barbershopId);
+    } catch (linkErr) {
+      setSavingId(null);
+      toast.error("Ceník uložen, ale nepodařilo se upravit nabídku služby.", {
+        description: linkErr instanceof Error ? linkErr.message : String(linkErr),
+      });
+      return;
+    }
+
+    setSavingId(null);
     toast.success(`Uloženo: ${row.name}`);
+  };
+
+  const toggleOffered = async (row: StaffServiceEditorRow, offered: boolean) => {
+    if (!staffId || row.id < 0) {
+      patchRow(row.id, { offered });
+      return;
+    }
+    patchRow(row.id, { offered });
+    try {
+      await setStaffServiceOffered(staffId, row.id, offered, barbershopId);
+    } catch (e) {
+      patchRow(row.id, { offered: !offered });
+      toast.error("Nepodařilo se upravit nabídku služby.", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
   };
 
   const addService = () => {
@@ -134,6 +148,7 @@ export default function AdminStaffServicesPage() {
         price: 500,
         duration_minutes: 60,
         is_active: true,
+        offered: true,
       },
     ]);
   };
@@ -168,7 +183,8 @@ export default function AdminStaffServicesPage() {
           <div className="hairline w-20 mt-4 mb-2" />
           <p className="text-muted-foreground text-sm max-w-xl">
             {staffName ? `${staffName} — ` : ""}
-            vaše služby v rezervacích. Ceník na hlavní stránce webu zůstává beze změny.
+            vypnutí služby skryje jen vaši nabídku v rezervacích. Stávající rezervace zůstanou beze
+            změny. Služba zmizí z webu, až ji vypnou všichni kadeřníci.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -195,8 +211,7 @@ export default function AdminStaffServicesPage() {
         </div>
       ) : rows.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
-          Zatím nemáte přiřazené služby. Přidejte první nebo spusťte{" "}
-          <code className="text-xs bg-muted px-1 rounded">kadernictvi_pracovnik_sluzby.sql</code>.
+          Zatím nemáte služby v ceníku salónu. Přidejte první nebo spusťte SQL seed.
         </p>
       ) : (
         <div className="space-y-4 max-w-3xl">
@@ -214,12 +229,12 @@ export default function AdminStaffServicesPage() {
                 />
                 <div className="flex items-center gap-2 shrink-0">
                   <Switch
-                    checked={row.is_active}
-                    onCheckedChange={(v) => patchRow(row.id, { is_active: v })}
-                    aria-label="Aktivní v rezervacích"
+                    checked={row.offered}
+                    onCheckedChange={(v) => void toggleOffered(row, v === true)}
+                    aria-label="Nabízím v rezervacích"
                   />
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {row.is_active ? "V rezervacích" : "Skryto"}
+                    {row.offered ? "Nabízím" : "Nenabízím"}
                   </span>
                 </div>
               </div>

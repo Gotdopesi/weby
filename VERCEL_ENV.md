@@ -17,7 +17,7 @@ Bez těchto proměnných rezervace / e-maily nefungují:
 | `CRON_SECRET` | Cron SMS |
 | `CANCEL_SECRET` | Odkaz zrušení v e-mailu |
 
-**Odesílatel e-mailu:** výchozí `Studio Elegance <rezervace@dweby.cz>` z `sites.config.json`. Pokud doména v Resend ještě není ověřená, API automaticky zkusí `onboarding@resend.dev`. Pro testování: `RESEND_USE_SANDBOX=true` na Vercelu.
+**Odesílatel e-mailu:** výchozí `Studio Elegance <rezervace@dweby.cz>` z `sites.config.json`. Ověř doménu `dweby.cz` v Resend → Domains. **Nepoužívej** `RESEND_USE_SANDBOX=true` na produkci — jinak může Resend posílat z `onboarding@resend.dev` jen na tvůj účet, ne zákazníkům.
 
 **Názvy tabulek (`showcase_*`) na Vercel nepotřebuješ** — jsou v kódu jako `kadernictvi_*`.
 
