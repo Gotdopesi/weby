@@ -19,15 +19,18 @@ export async function fetchCanRegisterOwner(kadernictviId = DEFAULT_KADERNICTVI_
   return false;
 }
 
-export async function registerOwnerAccount(email: string, password: string): Promise<string | null> {
+export async function registerOwnerAccount(
+  email: string,
+  password: string,
+): Promise<{ error: string | null; emailSent?: boolean }> {
   const res = await fetch("/api/admin/register-owner", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: email.trim(), password }),
   });
-  const data = (await res.json().catch(() => ({}))) as { error?: string };
-  if (!res.ok) return data.error ?? "Založení účtu se nezdařilo.";
-  return null;
+  const data = (await res.json().catch(() => ({}))) as { error?: string; emailSent?: boolean };
+  if (!res.ok) return { error: data.error ?? "Založení účtu se nezdařilo." };
+  return { error: null, emailSent: data.emailSent };
 }
 
 export async function requestAdminPasswordReset(email: string): Promise<string | null> {

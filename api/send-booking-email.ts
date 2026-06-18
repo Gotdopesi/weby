@@ -1,8 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { createHmac, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { Resend } from "resend";
-import { buildBookingConfirmationEmail } from "../lib/salon-email-html";
 
 const REZERVACE_TABLE = "kadernictvi_rezervace";
 
@@ -34,7 +33,7 @@ function getResendFrom(req: VercelRequest): string {
     return (
       process.env.RESEND_FROM_KADERNICTVI?.trim() ||
       process.env.RESEND_FROM?.trim() ||
-      "Studio Elegance <onboarding@resend.dev>"
+      "Studio Elegance <rezervace@dweby.cz>"
     );
   }
   return (
@@ -51,12 +50,6 @@ function getDefaultShopName(req: VercelRequest): string {
 
 function cancelSecretOptional(): string | null {
   return process.env.CANCEL_SECRET?.trim() || process.env.CRON_SECRET?.trim() || null;
-}
-
-function normalizeBookingTime(time: string): string {
-  const m = time.trim().match(/^(\d{1,2}):(\d{2})/);
-  if (!m) return time.trim();
-  return `${m[1].padStart(2, "0")}:${m[2]}`;
 }
 
 function newCancelCode(): string {
@@ -100,6 +93,69 @@ function buildCancelReservationUrl(req: VercelRequest, cancelCode: string): stri
   return `${getPublicSiteUrl(req)}/zrusit-rezervaci?k=${encodeURIComponent(cancelCode)}`;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function emailButton(href: string, label: string): string {
+  const safeHref = href.replace(/"/g, "&quot;");
+  const safeLabel = escapeHtml(label);
+  return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:24px auto 8px;">
+<tr><td align="center" bgcolor="#1a1a1a" style="border-radius:10px;">
+<a href="${safeHref}" target="_blank" style="display:inline-block;padding:16px 36px;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none !important;border-radius:10px;background-color:#1a1a1a;">
+<span style="color:#ffffff !important;">${safeLabel}</span></a>
+</td></tr></table>`;
+}
+
+function buildBookingConfirmationHtml(p: {
+  customerName: string;
+  service: string;
+  bookingDate: string;
+  bookingTime: string;
+  barbershopName: string;
+  barbershopEmail?: string | null;
+  phone: string;
+  cancelUrl: string | null;
+}): string {
+  const contact = p.barbershopEmail
+    ? `<a href="mailto:${escapeHtml(p.barbershopEmail)}" style="color:#b8860b;text-decoration:none;">${escapeHtml(p.barbershopEmail)}</a>`
+    : "viz web salónu";
+  const cancelBlock = p.cancelUrl
+    ? `<p style="margin:24px 0 0;text-align:center;color:#5c574f;font-size:14px;">Rezervaci můžete zrušit online nejpozději <strong>24&nbsp;hodin</strong> před termínem.</p>
+${emailButton(p.cancelUrl, "Zrušit rezervaci")}`
+    : "";
+
+  return `<!DOCTYPE html><html lang="cs"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;background:#f0ebe3;font-family:Georgia,serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
+<table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;">
+<tr><td style="height:4px;background:linear-gradient(90deg,#d4af37,#b8860b);"></td></tr>
+<tr><td style="padding:36px 32px 12px;text-align:center;">
+<p style="margin:0 0 12px;font-size:11px;letter-spacing:.28em;color:#b8860b;">POTVRZENÍ REZERVACE</p>
+<h1 style="margin:0;font-size:28px;font-weight:normal;color:#1a1a1a;">${escapeHtml(p.barbershopName)}</h1>
+</td></tr>
+<tr><td style="padding:8px 32px 36px;font-size:16px;line-height:1.65;color:#3d3a36;">
+<p>Dobrý den, <strong>${escapeHtml(p.customerName)}</strong>,</p>
+<p>děkujeme za rezervaci. Těšíme se na vás.</p>
+<table role="presentation" width="100%" style="margin:20px 0;border-collapse:collapse;">
+<tr><td style="padding:10px 0;border-bottom:1px solid #efe9df;color:#8a847c;width:38%;">Služba</td>
+<td style="padding:10px 0;border-bottom:1px solid #efe9df;font-weight:bold;">${escapeHtml(p.service)}</td></tr>
+<tr><td style="padding:10px 0;border-bottom:1px solid #efe9df;color:#8a847c;">Datum</td>
+<td style="padding:10px 0;border-bottom:1px solid #efe9df;font-weight:bold;">${escapeHtml(p.bookingDate)}</td></tr>
+<tr><td style="padding:10px 0;border-bottom:1px solid #efe9df;color:#8a847c;">Čas</td>
+<td style="padding:10px 0;border-bottom:1px solid #efe9df;font-weight:bold;">${escapeHtml(p.bookingTime)}</td></tr>
+<tr><td style="padding:10px 0;color:#8a847c;">Telefon</td>
+<td style="padding:10px 0;">${escapeHtml(p.phone)}</td></tr>
+</table>
+<p style="font-size:14px;color:#5c574f;">Kontakt salónu: ${contact}</p>
+${cancelBlock}
+</td></tr></table></td></tr></table></body></html>`;
+}
+
 function requireEnv(name: string): string {
   const v = process.env[name]?.trim();
   if (!v) throw new Error(`Missing env: ${name}`);
@@ -109,9 +165,7 @@ function requireEnv(name: string): string {
 function createSupabaseAdmin() {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
-  }
+  if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -151,20 +205,18 @@ async function loadReservation(
   };
 }
 
-async function sendConfirmationEmail(
-  resend: Resend,
-  from: string,
+async function sendViaResend(
+  req: VercelRequest,
   to: string,
   subject: string,
   html: string,
 ) {
+  const resend = new Resend(requireEnv("RESEND_API_KEY"));
+  const from = getResendFrom(req);
   const primary = await resend.emails.send({ from, to: [to], subject, html });
   if (!primary.error) return primary;
-
-  const msg = primary.error.message ?? "";
+  console.warn("[send-booking-email] resend primary failed:", primary.error.message);
   if (from.includes("onboarding@resend.dev")) return primary;
-
-  console.warn("[send-booking-email] retry onboarding@resend.dev:", msg);
   return resend.emails.send({
     from: "Studio Elegance <onboarding@resend.dev>",
     to: [to],
@@ -200,17 +252,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const cancelCode = await ensureCancelCode(supabase, row.id);
     const cancelUrl = cancelCode ? buildCancelReservationUrl(req, cancelCode) : null;
-
-    const resend = new Resend(requireEnv("RESEND_API_KEY"));
-    const from = getResendFrom(req);
     const customerName = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
 
-    const { data: sent, error: sendErr } = await sendConfirmationEmail(
-      resend,
-      from,
+    const { data: sent, error: sendErr } = await sendViaResend(
+      req,
       row.email,
       `Potvrzení rezervace — ${row.barbershopName}`,
-      buildBookingConfirmationEmail({
+      buildBookingConfirmationHtml({
         customerName,
         service: row.service,
         bookingDate: row.booking_date,

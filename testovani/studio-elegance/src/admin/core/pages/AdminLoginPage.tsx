@@ -91,10 +91,10 @@ export default function AdminLoginPage() {
       return;
     }
     setLoading(true);
-    const err = await registerOwnerAccount(email, password);
-    if (err) {
+    const { error: regErr, emailSent } = await registerOwnerAccount(email, password);
+    if (regErr) {
       setLoading(false);
-      toast.error(err);
+      toast.error(regErr);
       return;
     }
     const { error } = await supabase.auth.signInWithPassword({
@@ -103,13 +103,21 @@ export default function AdminLoginPage() {
     });
     setLoading(false);
     if (error) {
-      toast.success("Účet byl vytvořen. Přihlaste se e-mailem a heslem.");
+      toast.success(
+        emailSent
+          ? "Účet byl vytvořen. Na e-mail jsme poslali potvrzení — přihlaste se."
+          : "Účet byl vytvořen. Přihlaste se e-mailem a heslem.",
+      );
       setMode("login");
       setPassword("");
       setPasswordConfirm("");
       return;
     }
-    toast.success("Účet vytvořen a přihlášení proběhlo úspěšně.");
+    toast.success(
+      emailSent
+        ? "Účet vytvořen, přihlášení proběhlo. Potvrzení jsme poslali na e-mail."
+        : "Účet vytvořen a přihlášení proběhlo úspěšně.",
+    );
     navigate("/admin", { replace: true });
   };
 
