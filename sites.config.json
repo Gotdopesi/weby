@@ -54,6 +54,18 @@
       "resendFrom": "Donzi <rezervace@dweby.cz>",
       "resendFromEnv": "RESEND_FROM_DONZI",
       "defaultBarbershopName": "Barbershop Donzi"
+    },
+    {
+      "id": "studioelegance",
+      "label": "Perfekt studio (Trutnov)",
+      "projectDir": "kadernictvi/studio_Perfect",
+      "distPath": "sites/studioelegance",
+      "hosts": ["studioelegance.dweby.cz"],
+      "hasApi": false,
+      "buildEnv": {
+        "VITE_ANALYTICS_SITE_NAME": "Perfekt studio"
+      },
+      "siteUrl": "https://studioelegance.dweby.cz"
     }
   ]
 }

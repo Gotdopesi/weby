@@ -9,7 +9,9 @@
     "dev:dweby": "npm run dev --prefix dweby-main",
     "dev:donzi": "npm run dev --prefix kadernictvi/donzi-reservations-main",
     "dev:kadernictvi": "npm run dev --prefix testovani/studio-elegance",
-    "dev:vercel": "vercel dev"
+    "dev:perfekt": "npm run dev --prefix kadernictvi/studio_Perfect",
+    "dev:vercel": "vercel dev",
+    "backup:supabase": "node scripts/backup-supabase.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
@@ -19,6 +21,7 @@
   "devDependencies": {
     "@vercel/functions": "^2.2.13",
     "@vercel/node": "^5.8.3",
+    "pg": "^8.16.0",
     "typescript": "^5.9.3"
   }
 }
