@@ -8,7 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lightningcss-win32-x64-msvc": "^1.32.0",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
