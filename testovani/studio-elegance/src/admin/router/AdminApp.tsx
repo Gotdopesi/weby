@@ -13,6 +13,7 @@ import AdminStaffOverviewPage from "@/admin/templates/staff/pages/AdminStaffOver
 import AdminStaffServicesPage from "@/admin/templates/staff/pages/AdminStaffServicesPage";
 import AdminStaffSettingsPage from "@/admin/templates/staff/pages/AdminStaffSettingsPage";
 import { usesCombinedAdminSession } from "@/admin/config";
+import { useAdminBarbershop } from "@/admin/core/lib/use-admin-barbershop";
 import { useAdminSession } from "@/admin/core/lib/use-admin-session";
 import { useRouter } from "@/lib/router";
 
@@ -40,8 +41,9 @@ function AdminHomeRoute() {
 
 function AdminCustomersRoute() {
   const { userEmail } = useAdminSession();
+  const { isOwner } = useAdminBarbershop();
 
-  if (usesCombinedAdminSession(userEmail)) {
+  if (usesCombinedAdminSession(userEmail) || isOwner) {
     return <AdminCustomersPage />;
   }
   return (

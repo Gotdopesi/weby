@@ -4,8 +4,8 @@ import { BarChart3, CalendarDays, Users } from "lucide-react";
 
 const LINKS = [
   { to: "/admin", label: "Kalendář", icon: CalendarDays, exact: true },
-  { to: "/admin/zakaznici", label: "Zákazníci", icon: Users, exact: false },
-  { to: "/admin/statistiky", label: "Statistiky", icon: BarChart3, exact: false },
+  { to: "/admin/zakaznici", label: "Zákazníci", icon: Users, exact: true },
+  { to: "/admin/statistiky", label: "Statistiky", icon: BarChart3, exact: true },
 ] as const;
 
 export function AdminLegacyNav() {

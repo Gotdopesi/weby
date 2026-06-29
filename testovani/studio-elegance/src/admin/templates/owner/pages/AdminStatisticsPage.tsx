@@ -28,6 +28,8 @@ import {
   type StatsPeriod,
 } from "@/admin/templates/owner/lib/admin-statistics-period";
 import { fetchStaffForAdmin } from "@/lib/staff";
+import { usesCombinedAdminSession } from "@/admin/config";
+import { AdminSalonSoloStats } from "@/admin/templates/combined/components/AdminSalonSoloStats";
 import { useAdminBarbershop } from "@/admin/core/lib/use-admin-barbershop";
 import { useAdminSession } from "@/admin/core/lib/use-admin-session";
 import { AdminNav } from "@/admin/core/components/AdminNav";
@@ -58,8 +60,9 @@ type CatalogService = {
 };
 
 export default function AdminStatisticsPage() {
-  const { ready, authed, signOut } = useAdminSession();
+  const { ready, authed, signOut, userEmail } = useAdminSession();
   const { barbershopId, shopName } = useAdminBarbershop();
+  const soloSalon = usesCombinedAdminSession(userEmail);
 
   const [statsPeriod, setStatsPeriod] = useState<StatsPeriod>("month");
   const [periodAnchor, setPeriodAnchor] = useState(() => new Date());
@@ -182,7 +185,8 @@ export default function AdminStatisticsPage() {
           </h1>
           <div className="hairline w-20 mt-4 mb-2" />
           <p className="text-muted-foreground text-sm max-w-lg">
-            {shopName ?? "Salón"} — tržby, SMS a výkon týmu
+            {shopName ?? "Salón"} —{" "}
+            {soloSalon ? "tržby, klienti a služby" : "tržby, SMS a výkon týmu"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -299,14 +303,24 @@ export default function AdminStatisticsPage() {
         )}
       </section>
 
-      <AdminStaffPerformanceSection
-        staff={staff}
-        reservations={reservations}
-        catalog={catalog}
-        period={statsPeriod}
-        periodAnchor={periodAnchor}
-        scopeLabel={scopeLabel}
-      />
+      {soloSalon ? (
+        <AdminSalonSoloStats
+          reservations={reservations}
+          catalog={catalog}
+          period={statsPeriod}
+          periodAnchor={periodAnchor}
+          scopeLabel={scopeLabel}
+        />
+      ) : (
+        <AdminStaffPerformanceSection
+          staff={staff}
+          reservations={reservations}
+          catalog={catalog}
+          period={statsPeriod}
+          periodAnchor={periodAnchor}
+          scopeLabel={scopeLabel}
+        />
+      )}
 
       {detailMonth && (
         <AdminRevenueDetailDialog
