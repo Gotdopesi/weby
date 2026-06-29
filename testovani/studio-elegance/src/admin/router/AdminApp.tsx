@@ -12,9 +12,8 @@ import AdminStaffCustomersPage from "@/admin/templates/staff/pages/AdminStaffCus
 import AdminStaffOverviewPage from "@/admin/templates/staff/pages/AdminStaffOverviewPage";
 import AdminStaffServicesPage from "@/admin/templates/staff/pages/AdminStaffServicesPage";
 import AdminStaffSettingsPage from "@/admin/templates/staff/pages/AdminStaffSettingsPage";
-import { isLegacyAdminSession } from "@/admin/core/lib/admin-legacy-ui";
+import { usesCombinedAdminSession } from "@/admin/config";
 import { useAdminSession } from "@/admin/core/lib/use-admin-session";
-import { getAdminTemplate } from "@/admin/config";
 import { useRouter } from "@/lib/router";
 
 function AdminSessionGate({ children }: { children: React.ReactNode }) {
@@ -32,9 +31,8 @@ function AdminSessionGate({ children }: { children: React.ReactNode }) {
 
 function AdminHomeRoute() {
   const { userEmail } = useAdminSession();
-  const template = getAdminTemplate();
 
-  if (template === "combined" || isLegacyAdminSession(userEmail)) {
+  if (usesCombinedAdminSession(userEmail)) {
     return <AdminReservationsPage />;
   }
   return <AdminRoleHome />;
@@ -42,9 +40,8 @@ function AdminHomeRoute() {
 
 function AdminCustomersRoute() {
   const { userEmail } = useAdminSession();
-  const template = getAdminTemplate();
 
-  if (template === "combined" || isLegacyAdminSession(userEmail)) {
+  if (usesCombinedAdminSession(userEmail)) {
     return <AdminCustomersPage />;
   }
   return (
@@ -52,6 +49,13 @@ function AdminCustomersRoute() {
       <AdminStaffCustomersPage />
     </AdminStaffGuard>
   );
+}
+
+function AdminStatisticsRoute() {
+  const { userEmail } = useAdminSession();
+  const statsPage = <AdminStatisticsPage />;
+  if (usesCombinedAdminSession(userEmail)) return statsPage;
+  return <AdminOwnerGuard>{statsPage}</AdminOwnerGuard>;
 }
 
 /** Všechny /admin/* cesty — importuj do salon App.tsx */
@@ -70,9 +74,7 @@ export function AdminApp() {
     return (
       <AdminLayout>
         <AdminSessionGate>
-          <AdminOwnerGuard>
-            <AdminStatisticsPage />
-          </AdminOwnerGuard>
+          <AdminStatisticsRoute />
         </AdminSessionGate>
       </AdminLayout>
     );

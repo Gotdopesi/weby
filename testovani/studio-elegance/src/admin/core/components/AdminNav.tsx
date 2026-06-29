@@ -1,10 +1,9 @@
 import { AppLink, useRouter } from "@/lib/router";
 import { AdminLegacyNav } from "@/admin/templates/combined/components/AdminLegacyNav";
 import { AdminStaffNav } from "@/admin/templates/staff/components/AdminStaffNav";
-import { isLegacyAdminSession } from "@/admin/core/lib/admin-legacy-ui";
+import { usesCombinedAdminSession } from "@/admin/config";
 import { useAdminBarbershop } from "@/admin/core/lib/use-admin-barbershop";
 import { useAdminSession } from "@/admin/core/lib/use-admin-session";
-import { getAdminTemplate } from "@/admin/config";
 import { cn } from "@/lib/utils";
 import { BarChart3 } from "lucide-react";
 
@@ -16,9 +15,8 @@ export function AdminNav() {
   const { pathname } = useRouter();
   const { userEmail } = useAdminSession();
   const { isOwner, isStaff } = useAdminBarbershop();
-  const template = getAdminTemplate();
 
-  if (template === "combined" || isLegacyAdminSession(userEmail)) return <AdminLegacyNav />;
+  if (usesCombinedAdminSession(userEmail)) return <AdminLegacyNav />;
   if (isStaff) return <AdminStaffNav />;
   return (
     <nav className="flex flex-wrap items-center gap-2 mb-8 border-b border-border/60 pb-4">

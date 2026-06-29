@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_ADMIN_ACCESS, type AdminAccess, type AdminRole } from "@/admin/core/lib/admin-access";
 import { devAdminRoleForEmail, devStaffFirstNameForEmail } from "@/admin/core/lib/dev-admin-logins";
+import { usesCombinedAdminSession } from "@/admin/config";
 import { DEFAULT_KADERNICTVI_ID } from "@/lib/barbershop";
 import { KADERNICTVI_TABULKY } from "@/lib/kadernictvi-tables";
 import { staffDisplayName } from "@/lib/staff";
@@ -56,22 +57,27 @@ export function AdminBarbershopProvider({ children }: { children: ReactNode }) {
         | null;
       const staffRow = Array.isArray(staffRaw) ? staffRaw[0] : staffRaw;
       let staffId = link?.pracovnik_id != null ? Number(link.pracovnik_id) : null;
-
       let staffNameResolved = staffRow ? staffDisplayName(staffRow) : null;
 
-      // Dev fallback: kadeřník bez staff_id v DB — dohledat podle jména z dev účtu
-      if (role === "staff" && staffId == null && import.meta.env.DEV) {
-        const devFirst = devStaffFirstNameForEmail(userEmail) ?? "Monika";
-        const { data: devStaff } = await supabase
-          .from(KADERNICTVI_TABULKY.pracovnici)
-          .select("id, first_name, last_name")
-          .eq("kadernictvi_id", resolvedId)
-          .eq("first_name", devFirst)
-          .maybeSingle();
-        if (devStaff?.id) {
-          staffId = Number(devStaff.id);
-          staffNameResolved = staffDisplayName(devStaff);
+      if (!usesCombinedAdminSession(userEmail)) {
+        // Dev fallback: kadeřník bez staff_id v DB — dohledat podle jména z dev účtu
+        if (role === "staff" && staffId == null && import.meta.env.DEV) {
+          const devFirst = devStaffFirstNameForEmail(userEmail) ?? "Monika";
+          const { data: devStaff } = await supabase
+            .from(KADERNICTVI_TABULKY.pracovnici)
+            .select("id, first_name, last_name")
+            .eq("kadernictvi_id", resolvedId)
+            .eq("first_name", devFirst)
+            .maybeSingle();
+          if (devStaff?.id) {
+            staffId = Number(devStaff.id);
+            staffNameResolved = staffDisplayName(devStaff);
+          }
         }
+      } else {
+        role = "owner";
+        staffId = null;
+        staffNameResolved = null;
       }
 
       nextAccess = {

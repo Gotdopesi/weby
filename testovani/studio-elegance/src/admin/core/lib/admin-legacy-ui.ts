@@ -1,8 +1,8 @@
 /**
- * Staré admin rozhraní (kalendář + statistiky v navigaci) pro vybrané účty.
- * Výchozí: chci.web@dweby.cz — lze přepsat VITE_ADMIN_LEGACY_UI_EMAILS.
+ * Spojené admin UI (kalendář + statistiky) pro vybrané účty při šabloně split.
+ * Nastav VITE_ADMIN_LEGACY_UI_EMAILS=admin@kadernictvi.dweby.cz
  */
-const DEFAULT_LEGACY_EMAILS = ["chci.web@dweby.cz"];
+const DEFAULT_LEGACY_EMAILS = ["admin@kadernictvi.dweby.cz"];
 
 export function parseLegacyAdminEmails(): string[] {
   const raw = (import.meta.env.VITE_ADMIN_LEGACY_UI_EMAILS as string | undefined) ?? "";

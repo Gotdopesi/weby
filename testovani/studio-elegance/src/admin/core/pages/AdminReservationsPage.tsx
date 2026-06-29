@@ -5,6 +5,7 @@ import { REZERVACE_TABLE } from "@/lib/rezervace";
 import { useAdminBarbershop } from "@/admin/core/lib/use-admin-barbershop";
 import type { Reservation } from "@/lib/reservations-by-day";
 import { isReadOnlyAdminSession } from "@/admin/core/lib/admin-readonly";
+import { usesCombinedAdminSession } from "@/admin/config";
 import { useAdminSession } from "@/admin/core/lib/use-admin-session";
 import { AdminNav } from "@/admin/core/components/AdminNav";
 import { AdminMonthCalendar } from "@/admin/core/components/AdminMonthCalendar";
@@ -25,6 +26,7 @@ export default function AdminReservationsPage() {
   const [calendarView, setCalendarView] = useState<"month" | "week">("month");
 
   const { barbershopId, isStaff, staffName, staffId } = useAdminBarbershop();
+  const combined = usesCombinedAdminSession(userEmail);
   const readOnly = isReadOnlyAdminSession(userEmail);
 
   const loadReservations = useCallback(async () => {
@@ -37,7 +39,7 @@ export default function AdminReservationsPage() {
         .order("booking_date", { ascending: true })
         .order("booking_time", { ascending: true });
 
-      if (isStaff && staffId) {
+      if (isStaff && staffId && !combined) {
         query = query.eq("pracovnik_id", staffId);
       }
 
@@ -55,7 +57,7 @@ export default function AdminReservationsPage() {
     } finally {
       setLoadingList(false);
     }
-  }, [barbershopId, isStaff, staffId]);
+  }, [barbershopId, isStaff, staffId, combined]);
 
   useEffect(() => {
     if (ready && authed) void loadReservations();
@@ -88,13 +90,15 @@ export default function AdminReservationsPage() {
         <div>
           <p className="text-gold tracking-[0.25em] text-xs uppercase mb-2">Administrace</p>
           <h1 className="font-display text-4xl md:text-5xl">
-            {isStaff && staffName ? `Kalendář — ${staffName}` : "Kalendář rezervací"}
+            {combined || !(isStaff && staffName)
+              ? "Kalendář rezervací"
+              : `Kalendář — ${staffName}`}
           </h1>
           <div className="hairline w-20 mt-4 mb-2" />
           <p className="text-muted-foreground text-sm max-w-xl">
-            {isStaff
-              ? "Vaše rezervace — klikněte na den s tečkami pro detail klientů."
-              : "Měsíční přehled salónu — klikněte na den s tečkami a uvidíte seznam klientů."}
+            {combined || !isStaff
+              ? "Měsíční přehled salónu — klikněte na den s tečkami a uvidíte seznam klientů."
+              : "Vaše rezervace — klikněte na den s tečkami pro detail klientů."}
           </p>
           {readOnly && (
             <p className="mt-2 text-sm text-amber-800 dark:text-amber-200/90 bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2 inline-block">

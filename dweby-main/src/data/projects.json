@@ -1,11 +1,11 @@
 [
   {
     "id": "kadernictvi",
-    "title": "Kadeřnictví",
-    "description": "Komplexní rezervační systém s admin panelem.",
+    "title": "Kadeřnický salón",
+    "description": "Web s rezervacemi, adminem pro majitele a SEO pro nové klienty.",
     "href": "https://kadernictvi.dweby.cz",
     "image": "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=900&q=80",
-    "imageAlt": "Kadeřnictví — rezervační systém"
+    "imageAlt": "Kadeřnictví — web a rezervace"
   },
   {
     "id": "zedreva",
