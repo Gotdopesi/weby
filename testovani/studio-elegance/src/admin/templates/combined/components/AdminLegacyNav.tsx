@@ -1,10 +1,12 @@
 import { AppLink, useRouter } from "@/lib/router";
 import { cn } from "@/lib/utils";
-import { BarChart3, CalendarDays, Users } from "lucide-react";
+import { BarChart3, CalendarDays, Scissors, Settings, Users } from "lucide-react";
 
 const LINKS = [
   { to: "/admin", label: "Kalendář", icon: CalendarDays, exact: true },
   { to: "/admin/zakaznici", label: "Zákazníci", icon: Users, exact: true },
+  { to: "/admin/sluzby", label: "Služby", icon: Scissors, exact: true },
+  { to: "/admin/nastaveni", label: "Nastavení", icon: Settings, exact: true },
   { to: "/admin/statistiky", label: "Statistiky", icon: BarChart3, exact: true },
 ] as const;
 

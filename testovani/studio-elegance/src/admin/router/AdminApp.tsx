@@ -31,12 +31,50 @@ function AdminSessionGate({ children }: { children: React.ReactNode }) {
 }
 
 function AdminHomeRoute() {
-  const { userEmail } = useAdminSession();
+  const { userEmail, ready } = useAdminSession();
+  const { loading } = useAdminBarbershop();
+
+  if (!ready || loading) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <p className="text-sm">Načítám kalendář…</p>
+      </div>
+    );
+  }
 
   if (usesCombinedAdminSession(userEmail)) {
     return <AdminReservationsPage />;
   }
   return <AdminRoleHome />;
+}
+
+function AdminStaffToolsRoute({ children }: { children: React.ReactNode }) {
+  const { userEmail, ready } = useAdminSession();
+  const { loading, isStaff, staffToolsId } = useAdminBarbershop();
+
+  if (!ready || loading) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <p className="text-sm">Ověřuji přístup…</p>
+      </div>
+    );
+  }
+
+  if (usesCombinedAdminSession(userEmail)) {
+    if (!staffToolsId) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          Pro nastavení služeb a pracovní doby je potřeba mít v salónu alespoň jednoho aktivního
+          pracovníka.
+        </p>
+      );
+    }
+    return <>{children}</>;
+  }
+
+  return <AdminStaffGuard>{children}</AdminStaffGuard>;
 }
 
 function AdminCustomersRoute() {
@@ -105,9 +143,11 @@ export function AdminApp() {
   if (pathname === "/admin/sluzby") {
     return (
       <AdminLayout>
-        <AdminStaffGuard>
-          <AdminStaffServicesPage />
-        </AdminStaffGuard>
+        <AdminSessionGate>
+          <AdminStaffToolsRoute>
+            <AdminStaffServicesPage />
+          </AdminStaffToolsRoute>
+        </AdminSessionGate>
       </AdminLayout>
     );
   }
@@ -115,9 +155,11 @@ export function AdminApp() {
   if (pathname === "/admin/nastaveni") {
     return (
       <AdminLayout>
-        <AdminStaffGuard>
-          <AdminStaffSettingsPage />
-        </AdminStaffGuard>
+        <AdminSessionGate>
+          <AdminStaffToolsRoute>
+            <AdminStaffSettingsPage />
+          </AdminStaffToolsRoute>
+        </AdminSessionGate>
       </AdminLayout>
     );
   }

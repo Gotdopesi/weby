@@ -47,7 +47,9 @@ import { toast } from "sonner";
 
 export default function AdminStaffSettingsPage() {
   const { ready, authed, signOut } = useAdminSession();
-  const { barbershopId, staffId, staffName } = useAdminBarbershop();
+  const { barbershopId, staffId, staffName, staffToolsId, staffToolsName } = useAdminBarbershop();
+  const activeStaffId = staffToolsId ?? staffId;
+  const activeStaffName = staffToolsName ?? staffName;
 
   const [scheduleFields, setScheduleFields] = useState<DayScheduleField[]>(() =>
     scheduleToFormFields({}),
@@ -71,16 +73,16 @@ export default function AdminStaffSettingsPage() {
   const blockDate = blockDay ? format(blockDay, "yyyy-MM-dd") : "";
 
   const load = useCallback(async () => {
-    if (!staffId) return;
+    if (!activeStaffId) return;
     setLoading(true);
     try {
       const [staffRes, blocksRes] = await Promise.all([
         supabase
           .from(KADERNICTVI_TABULKY.pracovnici)
           .select("work_schedule")
-          .eq("id", staffId)
+          .eq("id", activeStaffId)
           .single(),
-        fetchStaffBlocks(staffId, barbershopId, todayKey),
+        fetchStaffBlocks(activeStaffId, barbershopId, todayKey),
       ]);
 
       const raw = staffRes.data?.work_schedule ?? {};
@@ -90,24 +92,24 @@ export default function AdminStaffSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [staffId, barbershopId, todayKey]);
+  }, [activeStaffId, barbershopId, todayKey]);
 
   useEffect(() => {
-    if (ready && authed && staffId) void load();
-  }, [ready, authed, staffId, load]);
+    if (ready && authed && activeStaffId) void load();
+  }, [ready, authed, activeStaffId, load]);
 
   const patchDay = (dow: number, patch: Partial<DayScheduleField>) => {
     setScheduleFields((prev) => prev.map((d) => (d.dow === dow ? { ...d, ...patch } : d)));
   };
 
   const saveSchedule = async () => {
-    if (!staffId) return;
+    if (!activeStaffId) return;
     setSavingSchedule(true);
     const work_schedule = formFieldsToSchedule(scheduleFields);
     const { error } = await supabase
       .from(KADERNICTVI_TABULKY.pracovnici)
       .update({ work_schedule })
-      .eq("id", staffId)
+      .eq("id", activeStaffId)
       .eq("kadernictvi_id", barbershopId);
     setSavingSchedule(false);
     if (error) {
@@ -125,7 +127,7 @@ export default function AdminStaffSettingsPage() {
   }, [blockDate, wholeDay, blockFrom, blockTo]);
 
   const runBlock = async () => {
-    if (!staffId) {
+    if (!activeStaffId) {
       toast.error("Účet není propojen s kadeřníkem v databázi.");
       return;
     }
@@ -152,7 +154,7 @@ export default function AdminStaffSettingsPage() {
     try {
       const result = await staffBulkCancelAndNotify({
         barbershopId,
-        staffId,
+        activeStaffId,
         blockDate,
         wholeDay,
         startMinutes: timeToMinutes(blockFrom),
@@ -181,7 +183,7 @@ export default function AdminStaffSettingsPage() {
       }
 
       setBlockMessage("");
-      setBlocks(await fetchStaffBlocks(staffId, barbershopId, todayKey));
+      setBlocks(await fetchStaffBlocks(activeStaffId, barbershopId, todayKey));
     } catch (e) {
       toast.error("Blokace selhala.", {
         description: e instanceof Error ? e.message : String(e),
@@ -199,8 +201,8 @@ export default function AdminStaffSettingsPage() {
     try {
       await unblockStaffSlot(block.id);
       toast.success("Termíny odblokovány.");
-      if (staffId) {
-        setBlocks(await fetchStaffBlocks(staffId, barbershopId, todayKey));
+      if (activeStaffId) {
+        setBlocks(await fetchStaffBlocks(activeStaffId, barbershopId, todayKey));
       }
     } catch (e) {
       toast.error("Odblokování selhalo.", {
@@ -218,7 +220,7 @@ export default function AdminStaffSettingsPage() {
     );
   }
 
-  if (!staffId) {
+  if (!activeStaffId) {
     return (
       <div className="pb-4 md:pb-0">
         <AdminNav />
@@ -239,7 +241,7 @@ export default function AdminStaffSettingsPage() {
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl">Nastavení</h1>
           <div className="hairline w-20 mt-4 mb-2" />
           <p className="text-muted-foreground text-sm max-w-xl">
-            {staffName ? `${staffName} — ` : ""}
+            {activeStaffName ? `${activeStaffName} — ` : ""}
             pracovní doba a blokace termínů
           </p>
         </div>

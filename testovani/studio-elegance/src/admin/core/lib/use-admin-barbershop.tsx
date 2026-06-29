@@ -80,10 +80,33 @@ export function AdminBarbershopProvider({ children }: { children: ReactNode }) {
         staffNameResolved = null;
       }
 
+      let staffToolsId: number | null = staffId;
+      let staffToolsName: string | null = staffNameResolved;
+
+      if (usesCombinedAdminSession(userEmail) && role === "owner") {
+        const { data: firstStaff } = await supabase
+          .from(KADERNICTVI_TABULKY.pracovnici)
+          .select("id, first_name, last_name")
+          .eq("kadernictvi_id", resolvedId)
+          .eq("is_active", true)
+          .order("id", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (firstStaff?.id) {
+          staffToolsId = Number(firstStaff.id);
+          staffToolsName = staffDisplayName(firstStaff);
+        } else {
+          staffToolsId = null;
+          staffToolsName = null;
+        }
+      }
+
       nextAccess = {
         role,
         staffId,
         staffName: staffNameResolved,
+        staffToolsId,
+        staffToolsName,
         loginLabel: link?.login_label ?? null,
         isOwner: role === "owner",
         isStaff: role === "staff",

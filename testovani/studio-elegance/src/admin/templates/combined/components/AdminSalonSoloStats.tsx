@@ -108,7 +108,7 @@ export function AdminSalonSoloStats({
       {topServices.length > 0 ? (
         <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
           <div className="px-5 py-3 border-b border-border/60">
-            <p className="text-sm font-medium">Nejčastější služby</p>
+            <p className="text-sm font-medium">Nejvýdělečnější služby</p>
           </div>
           <ul className="divide-y divide-border/60">
             {topServices.map((svc) => (

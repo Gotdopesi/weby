@@ -20,16 +20,18 @@ import { cn } from "@/lib/utils";
 
 export default function AdminStaffServicesPage() {
   const { ready, authed, signOut } = useAdminSession();
-  const { barbershopId, staffId, staffName } = useAdminBarbershop();
+  const { barbershopId, staffId, staffName, staffToolsId, staffToolsName } = useAdminBarbershop();
+  const activeStaffId = staffToolsId ?? staffId;
+  const activeStaffName = staffToolsName ?? staffName;
   const [rows, setRows] = useState<StaffServiceEditorRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    if (!staffId) return;
+    if (!activeStaffId) return;
     setLoading(true);
     try {
-      setRows(await fetchStaffServicesForEditor(staffId, barbershopId));
+      setRows(await fetchStaffServicesForEditor(activeStaffId, barbershopId));
     } catch (e) {
       toast.error("Služby se nepodařilo načíst.", {
         description: e instanceof Error ? e.message : String(e),
@@ -37,18 +39,18 @@ export default function AdminStaffServicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [barbershopId, staffId]);
+  }, [barbershopId, activeStaffId]);
 
   useEffect(() => {
-    if (ready && authed && staffId) void load();
-  }, [ready, authed, staffId, load]);
+    if (ready && authed && activeStaffId) void load();
+  }, [ready, authed, activeStaffId, load]);
 
   const patchRow = (id: number, patch: Partial<StaffServiceEditorRow>) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   };
 
   const save = async (row: StaffServiceEditorRow) => {
-    if (!staffId) return;
+    if (!activeStaffId) return;
     if (!row.name.trim()) {
       toast.error("Název služby nesmí být prázdný.");
       return;
@@ -78,7 +80,7 @@ export default function AdminStaffServicesPage() {
       }
       const newId = Number(data.id);
       try {
-        await linkServiceToStaff(staffId, newId);
+        await linkServiceToStaff(activeStaffId, newId);
       } catch (linkErr) {
         setSavingId(null);
         toast.error("Služba vytvořena, ale nepodařilo se ji přiřadit k vám.", {
@@ -110,7 +112,7 @@ export default function AdminStaffServicesPage() {
     }
 
     try {
-      await setStaffServiceOffered(staffId, row.id, row.offered, barbershopId);
+      await setStaffServiceOffered(activeStaffId, row.id, row.offered, barbershopId);
     } catch (linkErr) {
       setSavingId(null);
       toast.error("Ceník uložen, ale nepodařilo se upravit nabídku služby.", {
@@ -124,13 +126,13 @@ export default function AdminStaffServicesPage() {
   };
 
   const toggleOffered = async (row: StaffServiceEditorRow, offered: boolean) => {
-    if (!staffId || row.id < 0) {
+    if (!activeStaffId || row.id < 0) {
       patchRow(row.id, { offered });
       return;
     }
     patchRow(row.id, { offered });
     try {
-      await setStaffServiceOffered(staffId, row.id, offered, barbershopId);
+      await setStaffServiceOffered(activeStaffId, row.id, offered, barbershopId);
     } catch (e) {
       patchRow(row.id, { offered: !offered });
       toast.error("Nepodařilo se upravit nabídku služby.", {
@@ -162,7 +164,7 @@ export default function AdminStaffServicesPage() {
     );
   }
 
-  if (!staffId) {
+  if (!activeStaffId) {
     return (
       <div className="pb-4 md:pb-0">
         <AdminNav />
@@ -182,7 +184,7 @@ export default function AdminStaffServicesPage() {
           </h1>
           <div className="hairline w-20 mt-4 mb-2" />
           <p className="text-muted-foreground text-sm max-w-xl">
-            {staffName ? `${staffName} — ` : ""}
+            {activeStaffName ? `${activeStaffName} — ` : ""}
             vypnutí služby skryje jen vaši nabídku v rezervacích. Stávající rezervace zůstanou beze
             změny. Služba zmizí z webu, až ji vypnou všichni kadeřníci.
           </p>
